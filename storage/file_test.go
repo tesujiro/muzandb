@@ -6,9 +6,12 @@ import (
 )
 
 func TestFile(t *testing.T) {
-	f, err := newFile("xxx.dbf", BlockSize*1024*10)
+	f, err := newFile("xxx.dbf", BlockSize*10)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(f)
+	err = f.write(2, 10, []byte("0123456789"))
+	if err != nil {
+		fmt.Println(err)
+	}
 }

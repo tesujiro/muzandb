@@ -10,9 +10,10 @@ const BlockSize = 1024
 type file struct {
 	path   string
 	writer *os.File
+	blocks uint32
 }
 
-func newFile(path string, size int) (*file, error) {
+func newFile(path string, size uint32) (*file, error) {
 	if _, err := os.Stat(path); err == nil {
 		return nil, fmt.Errorf("file %s already exists.", path)
 	} else if err != nil {
@@ -28,7 +29,7 @@ func newFile(path string, size int) (*file, error) {
 	}
 	blocks := size / BlockSize
 	nullBlock := make([]byte, BlockSize)
-	for i := 0; i < blocks; i++ {
+	for i := uint32(0); i < blocks; i++ {
 		_, err := fp.Write(nullBlock)
 		if err != nil {
 			return nil, err
@@ -36,5 +37,19 @@ func newFile(path string, size int) (*file, error) {
 		}
 	}
 	fmt.Printf("init %v bytes.\n", BlockSize*blocks)
-	return &file{path: path, writer: fp}, nil
+	return &file{path: path, writer: fp, blocks: blocks}, nil
+}
+
+func (file *file) write(block, byt uint32, buf []byte) error {
+	if block > file.blocks {
+		return fmt.Errorf("block %v larger than blocks %v", block, file.blocks)
+	}
+	if byt > BlockSize {
+		return fmt.Errorf("byte number %v larger than BlockSize %v", byt, BlockSize)
+	}
+	// TODO: check len(buf)
+
+	file.writer.Seek(int64(BlockSize*block+byt), os.SEEK_SET)
+	_, err := file.writer.Write(buf)
+	return err
 }
