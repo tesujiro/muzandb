@@ -53,7 +53,7 @@ func (file *file) write(block, byt uint32, buf []byte) error {
 }
 
 func (file *file) writeBlock(block uint32, buf []byte) error {
-	return file.write(block, BlockSize, buf)
+	return file.write(block, 0, buf)
 }
 
 func (file *file) read(block, byt uint32, size int) ([]byte, error) {

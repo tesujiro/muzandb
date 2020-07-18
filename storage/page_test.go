@@ -31,9 +31,14 @@ func TestPage(t *testing.T) {
 	fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)
 
 	// Test Page Record
-	endian.PutUint16(b[0:], uint16(10))
-	endian.PutUint16(b[2:], uint16(20))
-	err = f.write(1, BlockSize-4-4, b)
+	s := make([]byte, 4)
+	endian.PutUint16(s[0:], uint16(10))
+	endian.PutUint16(s[2:], uint16(20))
+	for i, c := range s {
+		page.data[BlockSize-4-4+i] = c
+	}
+	//fmt.Printf("page.data=%v\n", page.data)
+	err = f.writeBlock(1, page.data)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -49,5 +54,42 @@ func TestPage(t *testing.T) {
 	page = getPage(buf)
 	r := page.selectRecord(1)
 	fmt.Printf("record(%v)=%v\n", len(r), string(r))
+
+	// Test Insert Record
+	pagenum := uint32(2)
+	buf, err = f.readBlock(pagenum)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("readBlock()=%v\n", buf)
+	}
+
+	page = getPage(buf)
+	sl, err := page.insertRecord([]byte("TEST RECORD1"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("slot=%v\n", sl)
+	sl, err = page.insertRecord([]byte("TEST RECORD2"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("slot=%v\n", sl)
+	sl, err = page.insertRecord([]byte("TEST RECORD3"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("slot=%v\n", sl)
+
+	err = f.writeBlock(pagenum, page.data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	buf, err = f.readBlock(pagenum)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("readBlock()=%v\n", buf)
+	}
 
 }
