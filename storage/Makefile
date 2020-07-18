@@ -1,3 +1,3 @@
 test:
-	- rm xxx.dbf
+	- rm *.dbf
 	go test -v .

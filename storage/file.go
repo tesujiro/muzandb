@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-const BlockSize = 1024
-
 type file struct {
 	path   string
 	fp     *os.File
@@ -52,6 +50,10 @@ func (file *file) write(block, byt uint32, buf []byte) error {
 	file.fp.Seek(int64(BlockSize*block+byt), os.SEEK_SET)
 	_, err := file.fp.Write(buf)
 	return err
+}
+
+func (file *file) writeBlock(block uint32, buf []byte) error {
+	return file.write(block, BlockSize, buf)
 }
 
 func (file *file) read(block, byt uint32, size int) ([]byte, error) {
