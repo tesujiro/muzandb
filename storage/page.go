@@ -125,11 +125,6 @@ func (p *page) setSlot(slotnum uint16, sl *slot) error {
 	return nil
 }
 
-/*
-func (p *page) existSlot(slotnum uint16) bool {
-}
-*/
-
 func (p *page) deleteSlot(slotnum uint16) error {
 	sl, err := p.getSlot(slotnum)
 	if err != nil {
@@ -143,7 +138,9 @@ func (p *page) deleteSlot(slotnum uint16) error {
 }
 
 func (p *page) getRecord(sl slot) (record, error) {
-	//TODO: check delete
+	if sl.deleted() {
+		return nil, AlreadyDeletedError
+	}
 	return p.data[sl.location : sl.location+sl.length], nil
 }
 
@@ -155,11 +152,42 @@ func (p *page) selectRecord(slotnum uint16) (record, error) {
 	return p.getRecord(*sl)
 }
 
-/*
 func (p *page) updateRecord(slotnum uint16, rec record) error {
+	sl, err := p.getSlot(slotnum)
+	if err != nil {
+		return err
+	}
+	if sl.deleted() {
+		return AlreadyDeletedError
+	}
+
+	var loc uint16
+	if sl.length >= uint16(len(rec)) {
+		loc = sl.location
+	} else {
+		// new location
+		loc = p.header.freeSpacePointer
+		slots := p.header.slots
+		newFSPointer := p.header.freeSpacePointer + uint16(len(rec))
+
+		if newFSPointer >= uint16(len(p.data))-pageHeaderBytes-slotBytes*slots {
+			return NoSpaceError
+		}
+	}
+
+	p.header.freeSpacePointer += uint16(len(rec))
+	p.setHeader(p.header)
+
+	sl = &slot{location: loc, length: uint16(len(rec))}
+	p.setSlot(slotnum, sl)
+
+	// set Record
+	for i, c := range rec {
+		p.data[int(loc)+i] = c
+	}
+
 	return nil
 }
-*/
 
 func (p *page) deleteRecord(slotnum uint16) error {
 	sl, err := p.getSlot(slotnum)

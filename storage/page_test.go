@@ -88,6 +88,10 @@ func TestPage(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	err = page.updateRecord(1, []byte("TEST RECORD1 NEW"))
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	err = f.writeBlock(pagenum, page.data)
 	if err != nil {
