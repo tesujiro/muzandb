@@ -5,13 +5,13 @@ import (
 	"os"
 )
 
-type file struct {
-	path   string
+type File struct {
+	Path   string
 	fp     *os.File
-	blocks uint32
+	Blocks uint32
 }
 
-func newFile(path string, size uint32) (*file, error) {
+func newFile(path string, size uint32) (*File, error) {
 	if _, err := os.Stat(path); err == nil {
 		return nil, fmt.Errorf("file %s already exists.", path)
 	} else if err != nil {
@@ -35,12 +35,12 @@ func newFile(path string, size uint32) (*file, error) {
 		}
 	}
 	fmt.Printf("init %v bytes.\n", BlockSize*blocks)
-	return &file{path: path, fp: fp, blocks: blocks}, nil
+	return &File{Path: path, fp: fp, Blocks: blocks}, nil
 }
 
-func (file *file) write(block, byt uint32, buf []byte) error {
-	if block > file.blocks {
-		return fmt.Errorf("block %v larger than blocks %v", block, file.blocks)
+func (file *File) write(block, byt uint32, buf []byte) error {
+	if block > file.Blocks {
+		return fmt.Errorf("block %v larger than blocks %v", block, file.Blocks)
 	}
 	if byt > BlockSize {
 		return fmt.Errorf("byte number %v larger than BlockSize %v", byt, BlockSize)
@@ -52,13 +52,13 @@ func (file *file) write(block, byt uint32, buf []byte) error {
 	return err
 }
 
-func (file *file) writeBlock(block uint32, buf []byte) error {
+func (file *File) writeBlock(block uint32, buf []byte) error {
 	return file.write(block, 0, buf)
 }
 
-func (file *file) read(block, byt uint32, size int) ([]byte, error) {
-	if block > file.blocks {
-		return nil, fmt.Errorf("block %v larger than blocks %v", block, file.blocks)
+func (file *File) read(block, byt uint32, size int) ([]byte, error) {
+	if block > file.Blocks {
+		return nil, fmt.Errorf("block %v larger than blocks %v", block, file.Blocks)
 	}
 	if byt > BlockSize {
 		return nil, fmt.Errorf("byte number %v larger than BlockSize %v", byt, BlockSize)
@@ -71,10 +71,10 @@ func (file *file) read(block, byt uint32, size int) ([]byte, error) {
 	return buf, err
 }
 
-func (file *file) readBlock(block uint32) ([]byte, error) {
+func (file *File) readBlock(block uint32) ([]byte, error) {
 	return file.read(block, 0, BlockSize)
 }
 
-func (file *file) close() error {
+func (file *File) close() error {
 	return file.fp.Close()
 }

@@ -27,7 +27,7 @@ func TestPage(t *testing.T) {
 	} else {
 		fmt.Printf("readBlock()=%v\n", buf)
 	}
-	page := getPage(buf)
+	page := NewPage(buf)
 	fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)
 
 	// Test Page Record
@@ -51,8 +51,8 @@ func TestPage(t *testing.T) {
 		fmt.Printf("readBlock()=%v\n", buf)
 	}
 
-	page = getPage(buf)
-	r, _ := page.selectRecord(1)
+	page = NewPage(buf)
+	r, _ := page.SelectRecord(1)
 	fmt.Printf("record(%v)=%v\n", len(r), string(r))
 
 	// Test Insert Record
@@ -64,31 +64,31 @@ func TestPage(t *testing.T) {
 		fmt.Printf("readBlock()=%v\n", buf)
 	}
 
-	page = getPage(buf)
-	sl, err := page.insertRecord([]byte("TEST RECORD1"))
+	page = NewPage(buf)
+	sl, err := page.InsertRecord([]byte("TEST RECORD1"))
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("slot=%v\n", sl)
-	sl, err = page.insertRecord([]byte("TEST RECORD2"))
+	sl, err = page.InsertRecord([]byte("TEST RECORD2"))
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("slot=%v\n", sl)
-	sl, err = page.insertRecord([]byte("TEST RECORD3"))
+	sl, err = page.InsertRecord([]byte("TEST RECORD3"))
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("slot=%v\n", sl)
-	err = page.deleteRecord(2)
+	err = page.DeleteRecord(2)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = page.deleteRecord(2)
+	err = page.DeleteRecord(2)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = page.updateRecord(1, []byte("TEST RECORD1 NEW"))
+	err = page.UpdateRecord(1, []byte("TEST RECORD1 NEW"))
 	if err != nil {
 		fmt.Println(err)
 	}

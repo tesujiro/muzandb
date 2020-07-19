@@ -15,7 +15,7 @@ var (
 	NoSuchSlotError     = errors.New("The page does not have the slot")
 )
 
-type page struct {
+type Page struct {
 	data   []byte
 	header pageHeader
 }
@@ -41,27 +41,29 @@ type rid struct {
 	slotnum uint16
 }
 
-func newPage() *page {
+/*
+func NewPage() *Page {
 	data := make([]byte, BlockSize)
 	h := pageHeader{}
-	p := &page{data: data, header: h}
+	p := &Page{data: data, header: h}
 	return p
 }
+*/
 
-func getPage(bl []byte) *page {
-	p := &page{data: bl}
+func NewPage(bl []byte) *Page {
+	p := &Page{data: bl}
 	p.header = p.readHeader()
 	return p
 }
 
-func (p *page) readHeader() pageHeader {
+func (p *Page) readHeader() pageHeader {
 	header := p.data[len(p.data)-pageHeaderBytes:]
 	slots := endian.Uint16(header[:2])
 	fsp := endian.Uint16(header[2:])
 	return pageHeader{slots: slots, freeSpacePointer: fsp}
 }
 
-func (p *page) setHeader(ph pageHeader) {
+func (p *Page) setHeader(ph pageHeader) {
 	p.header.slots = ph.slots
 	p.header.freeSpacePointer = ph.freeSpacePointer
 
@@ -76,7 +78,7 @@ func (p *page) setHeader(ph pageHeader) {
 	return
 }
 
-func (p *page) insertRecord(rec record) (*slot, error) {
+func (p *Page) InsertRecord(rec record) (*slot, error) {
 	location := p.header.freeSpacePointer
 	newSlots := p.header.slots + 1
 	newFSPointer := p.header.freeSpacePointer + uint16(len(rec))
@@ -99,7 +101,7 @@ func (p *page) insertRecord(rec record) (*slot, error) {
 	return sl, nil
 }
 
-func (p *page) getSlot(slotnum uint16) (*slot, error) {
+func (p *Page) getSlot(slotnum uint16) (*slot, error) {
 	if slotnum > p.header.slots {
 		return nil, NoSuchSlotError
 	}
@@ -110,7 +112,7 @@ func (p *page) getSlot(slotnum uint16) (*slot, error) {
 	return &slot{location: loc, length: leng}, nil
 }
 
-func (p *page) setSlot(slotnum uint16, sl *slot) error {
+func (p *Page) setSlot(slotnum uint16, sl *slot) error {
 	// TODO: check No Space
 
 	b := make([]byte, 4)
@@ -125,7 +127,7 @@ func (p *page) setSlot(slotnum uint16, sl *slot) error {
 	return nil
 }
 
-func (p *page) deleteSlot(slotnum uint16) error {
+func (p *Page) deleteSlot(slotnum uint16) error {
 	sl, err := p.getSlot(slotnum)
 	if err != nil {
 		return err
@@ -137,14 +139,14 @@ func (p *page) deleteSlot(slotnum uint16) error {
 	return p.setSlot(slotnum, sl)
 }
 
-func (p *page) getRecord(sl slot) (record, error) {
+func (p *Page) getRecord(sl slot) (record, error) {
 	if sl.deleted() {
 		return nil, AlreadyDeletedError
 	}
 	return p.data[sl.location : sl.location+sl.length], nil
 }
 
-func (p *page) selectRecord(slotnum uint16) (record, error) {
+func (p *Page) SelectRecord(slotnum uint16) (record, error) {
 	sl, err := p.getSlot(slotnum)
 	if err != nil {
 		return nil, err
@@ -152,7 +154,7 @@ func (p *page) selectRecord(slotnum uint16) (record, error) {
 	return p.getRecord(*sl)
 }
 
-func (p *page) updateRecord(slotnum uint16, rec record) error {
+func (p *Page) UpdateRecord(slotnum uint16, rec record) error {
 	sl, err := p.getSlot(slotnum)
 	if err != nil {
 		return err
@@ -189,7 +191,7 @@ func (p *page) updateRecord(slotnum uint16, rec record) error {
 	return nil
 }
 
-func (p *page) deleteRecord(slotnum uint16) error {
+func (p *Page) DeleteRecord(slotnum uint16) error {
 	sl, err := p.getSlot(slotnum)
 	if err != nil {
 		return err
