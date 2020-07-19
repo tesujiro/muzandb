@@ -52,7 +52,7 @@ func TestPage(t *testing.T) {
 	}
 
 	page = getPage(buf)
-	r := page.selectRecord(1)
+	r, _ := page.selectRecord(1)
 	fmt.Printf("record(%v)=%v\n", len(r), string(r))
 
 	// Test Insert Record
@@ -80,6 +80,14 @@ func TestPage(t *testing.T) {
 		fmt.Println(err)
 	}
 	fmt.Printf("slot=%v\n", sl)
+	err = page.deleteRecord(2)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = page.deleteRecord(2)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	err = f.writeBlock(pagenum, page.data)
 	if err != nil {
