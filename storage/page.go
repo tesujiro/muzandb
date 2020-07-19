@@ -200,7 +200,7 @@ func (p *Page) DeleteRecord(slotnum uint16) error {
 		return AlreadyDeletedError
 	}
 	sl.setDeleted()
-	p.setSlot(2, sl)
+	p.setSlot(slotnum, sl)
 	return nil
 }
 
