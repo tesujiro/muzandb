@@ -1,3 +1,3 @@
 test:
-	- rm *.dbf
+	- rm *.dbf ./data/*.gob ./data/*.dbf
 	go test -v .

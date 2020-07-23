@@ -5,8 +5,6 @@ import (
 	"errors"
 )
 
-const BlockSize = 1024
-
 var endian binary.ByteOrder = binary.BigEndian
 
 var (

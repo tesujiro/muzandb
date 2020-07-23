@@ -38,6 +38,25 @@ func newFile(path string, size uint32) (*File, error) {
 	return &File{Path: path, fp: fp, Blocks: blocks}, nil
 }
 
+func getFile(path string) (*File, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	fp, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := stat.Size() / int64(BlockSize)
+	file := File{
+		Path:   path,
+		fp:     fp,
+		Blocks: uint32(blocks),
+	}
+	return &file, nil
+}
+
 func (file *File) write(block, byt uint32, buf []byte) error {
 	if block > file.Blocks {
 		return fmt.Errorf("block %v larger than blocks %v", block, file.Blocks)
