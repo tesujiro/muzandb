@@ -6,13 +6,12 @@ import (
 )
 
 func TestFile(t *testing.T) {
-	f, err := newFile("xxx.dbf", BlockSize*10)
-	if err != nil {
-		fmt.Println(err)
-	}
+	f := newFile(1, "xxx.dbf", PageSize*10)
 	defer f.close()
 
-	err = f.write(2, 10, []byte("0123456789"))
+	f.create()
+
+	err := f.write(2, 10, []byte("0123456789"))
 	if err != nil {
 		fmt.Println(err)
 	}

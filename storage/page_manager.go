@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const BlockSize = 1024
+const PageSize = 1024
 const dataPath = "./data"
 const pageMangerMetaPath = dataPath + "/page_manager.gob"
 
@@ -18,18 +18,10 @@ type PageManager struct {
 
 type FID uint8
 
-type FileInfo struct {
-	FID  FID
-	Path string
-	Size uint32
-	fd   *os.File
-}
-
-func (pm *PageManager) newFileInfo(path string, size uint32) FileInfo {
-	//TODO: existence check
-
+func (pm *PageManager) newFile(path string, size uint32) *File {
+	file := newFile(pm.LastFID, path, size)
 	pm.LastFID++
-	return FileInfo{FID: pm.LastFID, Path: path, Size: size}
+	return file
 }
 
 func startPageManager() *PageManager {
@@ -46,12 +38,13 @@ func startPageManager() *PageManager {
 		log.Fatal("decode error:", err)
 	}
 	for _, ts := range pm.Tablespaces {
-		for _, fi := range ts.F_info {
-			f, err := getFile(fi.Path)
+		for _, file := range ts.File {
+			//fp, err := getFile(fi.Path)
+			err := file.open()
 			if err != nil {
 				log.Fatal("file open error:", err)
 			}
-			fi.fd = f.fp
+			//fi.fp = fp
 		}
 	}
 
@@ -76,9 +69,9 @@ func (pm *PageManager) Save() error {
 
 func (pm *PageManager) Stop() error {
 	for _, ts := range pm.Tablespaces {
-		for _, fi := range ts.F_info {
-			if fi.fd != nil {
-				fi.fd.Close()
+		for _, fi := range ts.File {
+			if fi.fp != nil {
+				fi.fp.Close()
 			}
 		}
 	}
@@ -86,15 +79,15 @@ func (pm *PageManager) Stop() error {
 }
 
 type Tablespace struct {
-	Name   string
-	F_info []*FileInfo
+	Name string
+	File []*File
 }
 
 func (ts *Tablespace) String() string {
 	var str string
-	if len(ts.F_info) > 0 {
-		str = fmt.Sprintf("%v", ts.F_info[0])
-		for _, fi := range ts.F_info[1:] {
+	if len(ts.File) > 0 {
+		str = fmt.Sprintf("%v", ts.File[0])
+		for _, fi := range ts.File[1:] {
 			str = fmt.Sprintf("%v,%v", str, fi)
 		}
 	}
@@ -114,13 +107,12 @@ func (pm *PageManager) newTablespace(name string) (*Tablespace, error) {
 	return &ts, nil
 }
 
-func (ts *Tablespace) addFile(fi FileInfo) error {
-	fd, err := newFile(fi.Path, fi.Size)
+func (ts *Tablespace) addFile(file *File) error {
+	err := file.create()
 	if err != nil {
 		return err
 	}
-	fi.fd = fd.fp
-	ts.F_info = append(ts.F_info, &fi)
+	ts.File = append(ts.File, file)
 	return nil
 }
 

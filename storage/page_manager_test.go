@@ -10,9 +10,9 @@ func TestPageManager(t *testing.T) {
 
 	pm := startPageManager()
 
-	file1 := pm.newFileInfo("./data/file1.dbf", 1024*1024)
-	file2 := pm.newFileInfo("./data/file2.dbf", 1024*1024)
-	file3 := pm.newFileInfo("./data/file3.dbf", 1024*1024)
+	file1 := pm.newFile("./data/file1.dbf", 1024*1024)
+	file2 := pm.newFile("./data/file2.dbf", 1024*1024)
+	file3 := pm.newFile("./data/file3.dbf", 1024*1024)
 
 	ts1, err := pm.newTablespace("TABLESPACE1")
 	if err != nil {
@@ -45,4 +45,7 @@ func TestPageManager(t *testing.T) {
 	}
 	pm = startPageManager()
 	fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
+
+	//fp1 := pm.Tablespaces[0].F_info[0].fp
+	//fp1.readBlock(0)
 }

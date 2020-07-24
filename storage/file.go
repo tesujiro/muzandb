@@ -6,67 +6,69 @@ import (
 )
 
 type File struct {
-	Path   string
-	fp     *os.File
-	Blocks uint32
+	FID   FID
+	Path  string
+	Size  uint32
+	Pages uint32
+	fp    *os.File
 }
 
-func newFile(path string, size uint32) (*File, error) {
-	if _, err := os.Stat(path); err == nil {
-		return nil, fmt.Errorf("file %s already exists.", path)
+func newFile(fid FID, path string, size uint32) *File {
+	pages := size / PageSize
+	return &File{FID: fid, Path: path, Size: PageSize * pages, Pages: pages}
+}
+
+func (file *File) create() error {
+	if _, err := os.Stat(file.Path); err == nil {
+		return fmt.Errorf("file %s already exists.", file.Path)
 	} else if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, err
+			return err
 		}
 	}
 
-	fp, err := os.Create(path)
+	fp, err := os.Create(file.Path)
 	if err != nil {
 		fmt.Println(err)
-		return nil, err
+		return err
 	}
-	blocks := size / BlockSize
-	nullBlock := make([]byte, BlockSize)
-	for i := uint32(0); i < blocks; i++ {
+	nullBlock := make([]byte, PageSize)
+	for i := uint32(0); i < file.Pages; i++ {
 		_, err := fp.Write(nullBlock)
 		if err != nil {
-			return nil, err
+			return err
 
 		}
 	}
-	fmt.Printf("init %v bytes.\n", BlockSize*blocks)
-	return &File{Path: path, fp: fp, Blocks: blocks}, nil
+	file.fp = fp
+	fmt.Printf("init %v bytes.\n", PageSize*file.Pages)
+	return nil
 }
 
-func getFile(path string) (*File, error) {
-	stat, err := os.Stat(path)
+func (file *File) open() error {
+	_, err := os.Stat(file.Path)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fp, err := os.Open(path)
+	fp, err := os.Open(file.Path)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	file.fp = fp
 
-	blocks := stat.Size() / int64(BlockSize)
-	file := File{
-		Path:   path,
-		fp:     fp,
-		Blocks: uint32(blocks),
-	}
-	return &file, nil
+	return nil
 }
 
 func (file *File) write(block, byt uint32, buf []byte) error {
-	if block > file.Blocks {
-		return fmt.Errorf("block %v larger than blocks %v", block, file.Blocks)
+	if block > file.Pages {
+		return fmt.Errorf("block %v larger than pages %v", block, file.Pages)
 	}
-	if byt > BlockSize {
-		return fmt.Errorf("byte number %v larger than BlockSize %v", byt, BlockSize)
+	if byt > PageSize {
+		return fmt.Errorf("byte number %v larger than PageSize %v", byt, PageSize)
 	}
 	// TODO: check len(buf)
 
-	file.fp.Seek(int64(BlockSize*block+byt), os.SEEK_SET)
+	file.fp.Seek(int64(PageSize*block+byt), os.SEEK_SET)
 	_, err := file.fp.Write(buf)
 	return err
 }
@@ -76,22 +78,22 @@ func (file *File) writeBlock(block uint32, buf []byte) error {
 }
 
 func (file *File) read(block, byt uint32, size int) ([]byte, error) {
-	if block > file.Blocks {
-		return nil, fmt.Errorf("block %v larger than blocks %v", block, file.Blocks)
+	if block > file.Pages {
+		return nil, fmt.Errorf("block %v larger than pages %v", block, file.Pages)
 	}
-	if byt > BlockSize {
-		return nil, fmt.Errorf("byte number %v larger than BlockSize %v", byt, BlockSize)
+	if byt > PageSize {
+		return nil, fmt.Errorf("byte number %v larger than PageSize %v", byt, PageSize)
 	}
 	// TODO: check size
 
-	file.fp.Seek(int64(BlockSize*block+byt), os.SEEK_SET)
+	file.fp.Seek(int64(PageSize*block+byt), os.SEEK_SET)
 	buf := make([]byte, size)
 	_, err := file.fp.Read(buf)
 	return buf, err
 }
 
 func (file *File) readBlock(block uint32) ([]byte, error) {
-	return file.read(block, 0, BlockSize)
+	return file.read(block, 0, PageSize)
 }
 
 func (file *File) close() error {

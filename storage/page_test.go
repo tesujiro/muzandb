@@ -6,17 +6,15 @@ import (
 )
 
 func TestPage(t *testing.T) {
-	f, err := newFile("yyy.dbf", BlockSize*10)
-	if err != nil {
-		fmt.Println(err)
-	}
+	f := newFile(1, "yyy.dbf", PageSize*10)
+	f.create()
 	defer f.close()
 
 	// Test Page Header
 	b := make([]byte, 4)
 	endian.PutUint16(b[0:], uint16(10000))
 	endian.PutUint16(b[2:], uint16(20000))
-	err = f.write(1, BlockSize-4, b)
+	err := f.write(1, PageSize-4, b)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -35,7 +33,7 @@ func TestPage(t *testing.T) {
 	endian.PutUint16(s[0:], uint16(10))
 	endian.PutUint16(s[2:], uint16(20))
 	for i, c := range s {
-		page.data[BlockSize-4-4+i] = c
+		page.data[PageSize-4-4+i] = c
 	}
 	//fmt.Printf("page.data=%v\n", page.data)
 	err = f.writeBlock(1, page.data)
