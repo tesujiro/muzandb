@@ -6,7 +6,7 @@ import (
 )
 
 func TestFile(t *testing.T) {
-	f := newFile(1, "xxx.dbf", PageSize*10)
+	f := newFile(1, dataPath+"/xxx.dbf", PageSize*10)
 	defer f.close()
 
 	f.create()
