@@ -25,40 +25,37 @@ func (pm *PageManager) newFile(path string, size uint32) *File {
 }
 
 func startPageManager() *PageManager {
-	f, err := os.Open(pageMangerMetaPath)
+	fp, err := os.Open(pageMangerMetaPath)
 	if err != nil {
 		fmt.Println("Create New PageManager")
 		return &PageManager{}
 	}
-	defer f.Close()
+	defer fp.Close()
 
 	var pm *PageManager
-	dec := gob.NewDecoder(f)
+	dec := gob.NewDecoder(fp)
 	if err := dec.Decode(&pm); err != nil {
 		log.Fatal("decode error:", err)
 	}
 	for _, ts := range pm.Tablespaces {
 		for _, file := range ts.File {
-			//fp, err := getFile(fi.Path)
 			err := file.open()
 			if err != nil {
 				log.Fatal("file open error:", err)
 			}
-			//fi.fp = fp
 		}
 	}
-
 	return pm
 }
 
 func (pm *PageManager) Save() error {
-	f, err := os.Create(pageMangerMetaPath)
+	fp, err := os.Create(pageMangerMetaPath)
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
-	defer f.Close()
-	enc := gob.NewEncoder(f)
+	defer fp.Close()
+	enc := gob.NewEncoder(fp)
 
 	if err := enc.Encode(*pm); err != nil {
 		log.Fatal(err)
@@ -69,9 +66,9 @@ func (pm *PageManager) Save() error {
 
 func (pm *PageManager) Stop() error {
 	for _, ts := range pm.Tablespaces {
-		for _, fi := range ts.File {
-			if fi.fp != nil {
-				fi.fp.Close()
+		for _, file := range ts.File {
+			if file.fp != nil {
+				file.fp.Close()
 			}
 		}
 	}

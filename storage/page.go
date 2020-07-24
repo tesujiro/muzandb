@@ -39,15 +39,6 @@ type rid struct {
 	slotnum uint16
 }
 
-/*
-func NewPage() *Page {
-	data := make([]byte, BlockSize)
-	h := pageHeader{}
-	p := &Page{data: data, header: h}
-	return p
-}
-*/
-
 func NewPage(bl []byte) *Page {
 	p := &Page{data: bl}
 	p.header = p.readHeader()

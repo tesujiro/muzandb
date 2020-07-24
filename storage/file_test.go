@@ -22,11 +22,11 @@ func TestFile(t *testing.T) {
 		fmt.Printf("read()=%v\n", buf)
 	}
 
-	buf, err = f.readBlock(2)
+	buf, err = f.readPage(2)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("readBlock()=%v\n", buf)
+		fmt.Printf("readPage()=%v\n", buf)
 	}
 
 }

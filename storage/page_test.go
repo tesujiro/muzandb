@@ -19,11 +19,11 @@ func TestPage(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	buf, err := f.readBlock(1)
+	buf, err := f.readPage(1)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("readBlock()=%v\n", buf)
+		//fmt.Printf("readPage()=%v\n", buf)
 	}
 	page := NewPage(buf)
 	fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)
@@ -36,17 +36,17 @@ func TestPage(t *testing.T) {
 		page.data[PageSize-4-4+i] = c
 	}
 	//fmt.Printf("page.data=%v\n", page.data)
-	err = f.writeBlock(1, page.data)
+	err = f.writePage(1, page.data)
 	if err != nil {
 		fmt.Println(err)
 	}
 	err = f.write(1, 10, []byte("....5....0....5....0"))
 
-	buf, err = f.readBlock(1)
+	buf, err = f.readPage(1)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("readBlock()=%v\n", buf)
+		//fmt.Printf("readPage()=%v\n", buf)
 	}
 
 	page = NewPage(buf)
@@ -55,29 +55,29 @@ func TestPage(t *testing.T) {
 
 	// Test Insert Record
 	pagenum := uint32(2)
-	buf, err = f.readBlock(pagenum)
+	buf, err = f.readPage(pagenum)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("readBlock()=%v\n", buf)
+		//fmt.Printf("readPage()=%v\n", buf)
 	}
 
 	page = NewPage(buf)
-	sl, err := page.InsertRecord([]byte("TEST RECORD1"))
+	_, err = page.InsertRecord([]byte("TEST RECORD1"))
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("slot=%v\n", sl)
-	sl, err = page.InsertRecord([]byte("TEST RECORD2"))
+	//fmt.Printf("slot=%v\n", sl)
+	_, err = page.InsertRecord([]byte("TEST RECORD2"))
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("slot=%v\n", sl)
-	sl, err = page.InsertRecord([]byte("TEST RECORD3"))
+	//fmt.Printf("slot=%v\n", sl)
+	_, err = page.InsertRecord([]byte("TEST RECORD3"))
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("slot=%v\n", sl)
+	//fmt.Printf("slot=%v\n", sl)
 	err = page.DeleteRecord(2)
 	if err != nil {
 		fmt.Println(err)
@@ -91,15 +91,15 @@ func TestPage(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	err = f.writeBlock(pagenum, page.data)
+	err = f.writePage(pagenum, page.data)
 	if err != nil {
 		fmt.Println(err)
 	}
-	buf, err = f.readBlock(pagenum)
+	buf, err = f.readPage(pagenum)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("readBlock()=%v\n", buf)
+		//fmt.Printf("readPage()=%v\n", buf)
 	}
 
 }

@@ -32,9 +32,9 @@ func (file *File) create() error {
 		fmt.Println(err)
 		return err
 	}
-	nullBlock := make([]byte, PageSize)
+	nullPage := make([]byte, PageSize)
 	for i := uint32(0); i < file.Pages; i++ {
-		_, err := fp.Write(nullBlock)
+		_, err := fp.Write(nullPage)
 		if err != nil {
 			return err
 
@@ -50,7 +50,8 @@ func (file *File) open() error {
 	if err != nil {
 		return err
 	}
-	fp, err := os.Open(file.Path)
+	//fp, err := os.Open(file.Path)
+	fp, err := os.OpenFile(file.Path, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err
 	}
@@ -59,41 +60,41 @@ func (file *File) open() error {
 	return nil
 }
 
-func (file *File) write(block, byt uint32, buf []byte) error {
-	if block > file.Pages {
-		return fmt.Errorf("block %v larger than pages %v", block, file.Pages)
+func (file *File) write(page, byt uint32, buf []byte) error {
+	if page > file.Pages {
+		return fmt.Errorf("page %v larger than pages %v", page, file.Pages)
 	}
 	if byt > PageSize {
 		return fmt.Errorf("byte number %v larger than PageSize %v", byt, PageSize)
 	}
 	// TODO: check len(buf)
 
-	file.fp.Seek(int64(PageSize*block+byt), os.SEEK_SET)
+	file.fp.Seek(int64(PageSize*page+byt), os.SEEK_SET)
 	_, err := file.fp.Write(buf)
 	return err
 }
 
-func (file *File) writeBlock(block uint32, buf []byte) error {
-	return file.write(block, 0, buf)
+func (file *File) writePage(page uint32, buf []byte) error {
+	return file.write(page, 0, buf)
 }
 
-func (file *File) read(block, byt uint32, size int) ([]byte, error) {
-	if block > file.Pages {
-		return nil, fmt.Errorf("block %v larger than pages %v", block, file.Pages)
+func (file *File) read(page, byt uint32, size int) ([]byte, error) {
+	if page > file.Pages {
+		return nil, fmt.Errorf("page %v larger than pages %v", page, file.Pages)
 	}
 	if byt > PageSize {
 		return nil, fmt.Errorf("byte number %v larger than PageSize %v", byt, PageSize)
 	}
 	// TODO: check size
 
-	file.fp.Seek(int64(PageSize*block+byt), os.SEEK_SET)
+	file.fp.Seek(int64(PageSize*page+byt), os.SEEK_SET)
 	buf := make([]byte, size)
 	_, err := file.fp.Read(buf)
 	return buf, err
 }
 
-func (file *File) readBlock(block uint32) ([]byte, error) {
-	return file.read(block, 0, PageSize)
+func (file *File) readPage(page uint32) ([]byte, error) {
+	return file.read(page, 0, PageSize)
 }
 
 func (file *File) close() error {
