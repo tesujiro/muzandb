@@ -6,16 +6,17 @@ import (
 )
 
 type File struct {
-	FID   FID
-	Path  string
-	Size  uint32
-	Pages uint32
-	fp    *os.File
+	FID     FID
+	Path    string
+	Size    uint32
+	Pages   uint32
+	CurPage uint32
+	fp      *os.File
 }
 
 func newFile(fid FID, path string, size uint32) *File {
 	pages := size / PageSize
-	return &File{FID: fid, Path: path, Size: PageSize * pages, Pages: pages}
+	return &File{FID: fid, Path: path, Size: PageSize * pages, Pages: pages, CurPage: 0}
 }
 
 func (file *File) create() error {
@@ -64,6 +65,9 @@ func (file *File) write(page, byt uint32, buf []byte) error {
 	if page > file.Pages {
 		return fmt.Errorf("page %v larger than pages %v", page, file.Pages)
 	}
+	if page > file.CurPage {
+		return fmt.Errorf("page %v larger than used pages %v", page, file.CurPage)
+	}
 	if byt > PageSize {
 		return fmt.Errorf("byte number %v larger than PageSize %v", byt, PageSize)
 	}
@@ -74,8 +78,8 @@ func (file *File) write(page, byt uint32, buf []byte) error {
 	return err
 }
 
-func (file *File) writePage(page uint32, buf []byte) error {
-	return file.write(page, 0, buf)
+func (file *File) writePage(page *Page) error {
+	return file.write(page.pagenum, 0, page.data)
 }
 
 func (file *File) read(page, byt uint32, size int) ([]byte, error) {
@@ -93,8 +97,22 @@ func (file *File) read(page, byt uint32, size int) ([]byte, error) {
 	return buf, err
 }
 
-func (file *File) readPage(page uint32) ([]byte, error) {
-	return file.read(page, 0, PageSize)
+func (file *File) readPage(pagenum uint32) (*Page, error) {
+	data, err := file.read(pagenum, 0, PageSize)
+	if err != nil {
+		return nil, err
+	}
+	return NewPage(file, pagenum, data), nil
+}
+
+func (file *File) newPage() (*Page, error) {
+	pagenum := file.CurPage
+	file.CurPage++
+	data, err := file.read(pagenum, 0, PageSize)
+	if err != nil {
+		return nil, err
+	}
+	return NewPage(file, pagenum, data), nil
 }
 
 func (file *File) close() error {

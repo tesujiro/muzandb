@@ -113,8 +113,19 @@ func (ts *Tablespace) addFile(file *File) error {
 	return nil
 }
 
-/*
-func (ts *Tablespace) newPhysicalPage() error {
-	return nil
+func (ts *Tablespace) newPage() (*Page, error) {
+	pagenum := uint32(1 << 31)
+	var target *File
+	for _, file := range ts.File {
+		if file.CurPage < pagenum && file.CurPage+1 < file.Pages {
+			target = file
+			pagenum = file.Pages
+		}
+	}
+	page, err := target.newPage()
+	if err != nil {
+		return nil, err
+	}
+
+	return page, nil
 }
-*/

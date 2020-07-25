@@ -14,8 +14,11 @@ var (
 )
 
 type Page struct {
-	data   []byte
-	header pageHeader
+	//FID     FID
+	file    *File
+	pagenum uint32
+	data    []byte
+	header  pageHeader
 }
 
 type pageHeader struct {
@@ -28,6 +31,7 @@ const pageHeaderBytes = 4
 type record []byte
 
 type slot struct {
+	slotnum  uint16
 	location uint16
 	length   uint16
 }
@@ -35,14 +39,20 @@ type slot struct {
 const slotBytes = 4
 
 type rid struct {
-	pageid  uint32
+	fileid  FID
+	pagenum uint32
 	slotnum uint16
 }
 
-func NewPage(bl []byte) *Page {
-	p := &Page{data: bl}
+//func NewPage(bl []byte) *Page {
+func NewPage(file *File, pagenum uint32, bl []byte) *Page {
+	p := &Page{file: file, pagenum: pagenum, data: bl}
 	p.header = p.readHeader()
 	return p
+}
+
+func (p *Page) write() error {
+	return p.file.write(p.pagenum, 0, p.data)
 }
 
 func (p *Page) readHeader() pageHeader {
@@ -69,6 +79,7 @@ func (p *Page) setHeader(ph pageHeader) {
 
 func (p *Page) InsertRecord(rec record) (*slot, error) {
 	location := p.header.freeSpacePointer
+	slotnum := p.header.slots
 	newSlots := p.header.slots + 1
 	newFSPointer := p.header.freeSpacePointer + uint16(len(rec))
 
@@ -79,7 +90,7 @@ func (p *Page) InsertRecord(rec record) (*slot, error) {
 	header := pageHeader{slots: newSlots, freeSpacePointer: newFSPointer}
 	p.setHeader(header)
 
-	sl := &slot{location: location, length: uint16(len(rec))}
+	sl := &slot{slotnum: slotnum, location: location, length: uint16(len(rec))}
 	p.setSlot(header.slots, sl)
 
 	// set Record
@@ -91,14 +102,14 @@ func (p *Page) InsertRecord(rec record) (*slot, error) {
 }
 
 func (p *Page) getSlot(slotnum uint16) (*slot, error) {
-	if slotnum > p.header.slots {
+	if slotnum > p.header.slots-1 {
 		return nil, NoSuchSlotError
 	}
-	slotlocation := uint16(len(p.data)) - pageHeaderBytes - slotBytes*slotnum
+	slotlocation := uint16(len(p.data)) - pageHeaderBytes - slotBytes*(slotnum+1)
 	slotb := p.data[slotlocation : slotlocation+slotBytes]
 	loc := endian.Uint16(slotb)
 	leng := endian.Uint16(slotb[2:])
-	return &slot{location: loc, length: leng}, nil
+	return &slot{slotnum: slotnum, location: loc, length: leng}, nil
 }
 
 func (p *Page) setSlot(slotnum uint16, sl *slot) error {
@@ -108,7 +119,7 @@ func (p *Page) setSlot(slotnum uint16, sl *slot) error {
 	endian.PutUint16(b[0:], sl.location)
 	endian.PutUint16(b[2:], sl.length)
 
-	loc := uint16(len(p.data)) - pageHeaderBytes - slotnum*slotBytes
+	loc := uint16(len(p.data)) - pageHeaderBytes - slotBytes*(slotnum+1)
 	for i, r := range b {
 		p.data[int(loc)+i] = r
 	}
@@ -169,7 +180,7 @@ func (p *Page) UpdateRecord(slotnum uint16, rec record) error {
 	p.header.freeSpacePointer += uint16(len(rec))
 	p.setHeader(p.header)
 
-	sl = &slot{location: loc, length: uint16(len(rec))}
+	sl = &slot{slotnum: slotnum, location: loc, length: uint16(len(rec))}
 	p.setSlot(slotnum, sl)
 
 	// set Record
