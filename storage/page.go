@@ -38,6 +38,14 @@ type rid struct {
 
 const ridBytes = 7
 
+func (rid rid) Bytes() []byte {
+	var rid_b, pagenum_b, slotnum_b []byte
+	rid_b = []byte{byte(rid.file.FID)}
+	endian.PutUint32(pagenum_b, rid.pagenum)
+	endian.PutUint16(slotnum_b, rid.slotnum)
+	return append(append(rid_b, pagenum_b...), slotnum_b...)
+}
+
 type pagePointer struct {
 	file    *File
 	pagenum uint32
