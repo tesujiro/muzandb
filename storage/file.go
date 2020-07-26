@@ -102,7 +102,7 @@ func (file *File) readPage(pagenum uint32) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPage(file, pagenum, data), nil
+	return newPage(file, pagenum, data), nil
 }
 
 func (file *File) newPage() (*Page, error) {
@@ -112,7 +112,7 @@ func (file *File) newPage() (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPage(file, pagenum, data), nil
+	return newPage(file, pagenum, data), nil
 }
 
 func (file *File) close() error {

@@ -11,11 +11,11 @@ func TestPageManager(t *testing.T) {
 
 	pm := startPageManager()
 
-	file1 := pm.newFile("./data/file1.dbf", 1024*1024)
-	file2 := pm.newFile("./data/file2.dbf", 1024*1024)
-	file3 := pm.newFile("./data/file3.dbf", 1024*1024)
+	file1 := pm.NewFile("./data/file1.dbf", 1024*1024)
+	file2 := pm.NewFile("./data/file2.dbf", 1024*1024)
+	file3 := pm.NewFile("./data/file3.dbf", 1024*1024)
 
-	ts1, err := pm.newTablespace("TABLESPACE1")
+	ts1, err := pm.NewTablespace("TABLESPACE1")
 	if err != nil {
 		t.Fatalf("PageManger.newTablespace() error:%v", err)
 	}
@@ -59,14 +59,12 @@ func TestPageManager(t *testing.T) {
 	fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	ts0 := pm.Tablespaces[0]
-	//file0 := ts0.File[0]
-	page, err := ts0.newPage()
+	page, err := ts0.NewPage()
 	if err != nil {
 		t.Errorf("file.readPage error:%v", err)
 		//} else {
 		//fmt.Printf("readPage()=%v\n", buf)
 	}
-	//page := NewPage(buf)
 	fmt.Printf("pagenum=%v\n", page.pagenum)
 	pagenum := page.pagenum
 	fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)
@@ -127,11 +125,12 @@ func TestPageManager(t *testing.T) {
 		t.Errorf("page.UpdateRecord error:%v", err)
 	}
 
-	//err = file0.writePage(page)
 	err = page.write()
 	if err != nil {
 		t.Errorf("file.writePage error:%v", err)
 	}
+
+	// read the same page again
 	file0 := page.file
 	page, err = file0.readPage(pagenum)
 	if err != nil {

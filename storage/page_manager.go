@@ -18,7 +18,7 @@ type PageManager struct {
 
 type FID uint8
 
-func (pm *PageManager) newFile(path string, size uint32) *File {
+func (pm *PageManager) NewFile(path string, size uint32) *File {
 	file := newFile(pm.LastFID, path, size)
 	pm.LastFID++
 	return file
@@ -91,7 +91,7 @@ func (ts *Tablespace) String() string {
 	return fmt.Sprintf("{%v [%v]}", ts.Name, str)
 }
 
-func (pm *PageManager) newTablespace(name string) (*Tablespace, error) {
+func (pm *PageManager) NewTablespace(name string) (*Tablespace, error) {
 	//TODO: existance check
 	for _, ts := range pm.Tablespaces {
 		if ts.Name == name {
@@ -113,7 +113,8 @@ func (ts *Tablespace) addFile(file *File) error {
 	return nil
 }
 
-func (ts *Tablespace) newPage() (*Page, error) {
+func (ts *Tablespace) NewPage() (*Page, error) {
+	// TODO: least used / all
 	pagenum := uint32(1 << 31)
 	var target *File
 	for _, file := range ts.File {
@@ -122,10 +123,5 @@ func (ts *Tablespace) newPage() (*Page, error) {
 			pagenum = file.Pages
 		}
 	}
-	page, err := target.newPage()
-	if err != nil {
-		return nil, err
-	}
-
-	return page, nil
+	return target.newPage()
 }

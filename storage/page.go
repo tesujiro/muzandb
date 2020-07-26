@@ -2,19 +2,11 @@ package storage
 
 import (
 	"encoding/binary"
-	"errors"
 )
 
 var endian binary.ByteOrder = binary.BigEndian
 
-var (
-	AlreadyDeletedError = errors.New("Already deleted")
-	NoSpaceError        = errors.New("The page does not have enough space")
-	NoSuchSlotError     = errors.New("The page does not have the slot")
-)
-
 type Page struct {
-	//FID     FID
 	file    *File
 	pagenum uint32
 	data    []byte
@@ -39,13 +31,21 @@ type slot struct {
 const slotBytes = 4
 
 type rid struct {
-	fileid  FID
+	file    *File
 	pagenum uint32
 	slotnum uint16
 }
 
-//func NewPage(bl []byte) *Page {
-func NewPage(file *File, pagenum uint32, bl []byte) *Page {
+const ridBytes = 7
+
+type pagePointer struct {
+	file    *File
+	pagenum uint32
+}
+
+const pagePointerBytes = 5
+
+func newPage(file *File, pagenum uint32, bl []byte) *Page {
 	p := &Page{file: file, pagenum: pagenum, data: bl}
 	p.header = p.readHeader()
 	return p
