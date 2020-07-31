@@ -2,15 +2,47 @@ package storage
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 var endian binary.ByteOrder = binary.BigEndian
 
+type PageType uint8
+
+const (
+	IndexLeafPage PageType = iota
+	IndexNonLeafPage
+)
+
 type Page struct {
 	file    *File
 	pagenum uint32
-	data    []byte
-	header  pageHeader
+
+	//FixedSizedRecord bool
+	//data []byte
+	//header pageHeader
+}
+
+func (p *Page) Bytes() []byte {
+}
+
+type SlottedPage struct {
+	Page
+
+	//FixedSizedRecord bool
+	//data   []byte
+	header pageHeader
+}
+
+func NewSlottedPage() *SlottedPage {
+	return &SlottedPage{
+		file:    file,
+		pagenum: pagenum,
+	}
+}
+
+func (sp *SlottedPage) Bytes() []byte {
+
 }
 
 type pageHeader struct {
@@ -107,6 +139,30 @@ func (p *Page) InsertRecord(rec record) (*slot, error) {
 	}
 
 	return sl, nil
+}
+
+func (page *Page) InsertRecordAt(rec record, index uint16) error {
+	if page.header.slots < index {
+		return fmt.Errorf("insertAt error: index larger than slots")
+	}
+	if page.header.slots == 0 {
+		_, err := page.InsertRecord(rec)
+		return err
+	}
+	for i := page.header.slots; i > uint16(index); i-- {
+		record, err := page.SelectRecord(i - 1)
+		if err != nil {
+			return err
+		}
+		if i == page.header.slots {
+			page.InsertRecord(record)
+		} else {
+			page.UpdateRecord(i, record)
+		}
+	}
+	page.UpdateRecord(uint16(index), rec)
+
+	return nil
 }
 
 func (p *Page) getSlot(slotnum uint16) (*slot, error) {

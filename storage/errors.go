@@ -8,4 +8,5 @@ var (
 	NoSuchSlotError     = errors.New("The page does not have the slot.")
 	DuplicateKeyError   = errors.New("The key is duplicate.")
 	NoKeyError          = errors.New("The key does not exist.")
+	NodeOverflowError   = errors.New("The node has overvlowed.")
 )
