@@ -19,13 +19,16 @@ type Page struct {
 	pagenum uint32
 
 	//FixedSizedRecord bool
-	//data []byte
-	//header pageHeader
+	data   []byte
+	header pageHeader
 }
 
+/*
 func (p *Page) Bytes() []byte {
 }
+*/
 
+/*
 type SlottedPage struct {
 	Page
 
@@ -34,16 +37,19 @@ type SlottedPage struct {
 	header pageHeader
 }
 
-func NewSlottedPage() *SlottedPage {
+func NewSlottedPage(file *File, pagenum uint32) *SlottedPage {
 	return &SlottedPage{
-		file:    file,
-		pagenum: pagenum,
+		Page: Page{
+			file:    file,
+			pagenum: pagenum,
+		},
 	}
 }
 
-func (sp *SlottedPage) Bytes() []byte {
-
+func (sp *SlottedPage) Bytes() (*[]byte, error) {
+	return nil, nil
 }
+*/
 
 type pageHeader struct {
 	slots            uint16
@@ -70,6 +76,14 @@ type rid struct {
 
 const ridBytes = 7
 
+func newRid(file *File, pagenum uint32, slotnum uint16) rid {
+	return rid{
+		file:    file,
+		pagenum: pagenum,
+		slotnum: slotnum,
+	}
+}
+
 func (rid rid) Bytes() []byte {
 	var rid_b, pagenum_b, slotnum_b []byte
 	rid_b = []byte{byte(rid.file.FID)}
@@ -86,21 +100,24 @@ type pagePointer struct {
 const pagePointerBytes = 5
 
 func newPage(file *File, pagenum uint32, bl []byte) *Page {
-	p := &Page{file: file, pagenum: pagenum, data: bl}
-	p.header = p.readHeader()
+	p := &Page{file: file, pagenum: pagenum}
+	//p.header = p.readHeader()
 	return p
 }
 
 func (p *Page) write() error {
-	return p.file.write(p.pagenum, 0, p.data)
+	//return p.file.write(p.pagenum, 0, p.data)
+	return nil
 }
 
+/*
 func (p *Page) readHeader() pageHeader {
 	header := p.data[len(p.data)-pageHeaderBytes:]
 	slots := endian.Uint16(header[:2])
 	fsp := endian.Uint16(header[2:])
 	return pageHeader{slots: slots, freeSpacePointer: fsp}
 }
+*/
 
 func (p *Page) setHeader(ph pageHeader) {
 	p.header.slots = ph.slots

@@ -78,8 +78,8 @@ func (file *File) write(page, byt uint32, buf []byte) error {
 	return err
 }
 
-func (file *File) writePage(page *Page) error {
-	return file.write(page.pagenum, 0, page.data)
+func (file *File) writePage(page *Page, data []byte) error {
+	return file.write(page.pagenum, 0, data)
 }
 
 func (file *File) read(page, byt uint32, size int) ([]byte, error) {

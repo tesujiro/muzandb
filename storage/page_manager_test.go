@@ -127,7 +127,7 @@ func TestPageManager(t *testing.T) {
 
 	err = page.write()
 	if err != nil {
-		t.Errorf("file.writePage error:%v", err)
+		t.Errorf("page.write error:%v", err)
 	}
 
 	// read the same page again

@@ -32,7 +32,7 @@ func TestPage(t *testing.T) {
 	for i, c := range s {
 		page.data[PageSize-4-4+i] = c
 	}
-	err = f.writePage(page)
+	err = f.writePage(page, page.data)
 	if err != nil {
 		fmt.Println(err)
 	}
