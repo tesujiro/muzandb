@@ -53,10 +53,10 @@ func TestBtree(t *testing.T) {
 		t.Errorf("NewBtree error:%v", err)
 	}
 
-	keys := make([][]byte, 6000*1)
+	keys := make([][]byte, 2069)
 	for i := range keys {
-		keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
-		//keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-i))
+		//keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
+		keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-1-i))
 	}
 	//rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
 
