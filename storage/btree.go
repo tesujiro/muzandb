@@ -45,10 +45,15 @@ func (bt *Btree) PrintLeaves() {
 	}
 	fmt.Printf("leafTop : %v\n", *node)
 	count := 0
+	var prev []byte
 	for i := 0; ; i++ {
 		//fmt.Printf("node:%v len(keys):%v\n", i, len(node.Keys))
 		for j, key := range node.Keys {
 			fmt.Printf("node:%v\tkey[%v]:%s\n", i, j, key)
+			if bytes.Compare(key, prev) < 0 {
+				fmt.Printf("*** node:%v\tkey[%v]:%s prev:%s\n", i, j, key, prev)
+			}
+			prev = key
 			count++
 			//_, _ = j, key
 		}
@@ -163,7 +168,7 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 				return err
 			} else {
 				err := node.Pointers[i].insert(key, rid)
-				fmt.Printf("split 2 node.Pointers[%v].Keys=%v\n", i, len(node.Pointers[i].Keys))
+				//fmt.Printf("split 2 node.Pointers[%v].Keys=%v\n", i, len(node.Pointers[i].Keys))
 				for err == NodeOverflowError {
 					err = node.Pointers[i].split()
 				}
@@ -289,11 +294,12 @@ func (node *BtreeNode) split() error {
 		copy(node.Pointers, node.Pointers[:center+1])
 		fmt.Printf("After split left pointers(len:%v) right pointers(len:%v)\n", len(node.Pointers), len(right.Pointers))
 	}
-	//fmt.Printf("Node Keys: %s - %s\n", node.Keys[0], node.Keys[len(node.Keys)-1])
-	//fmt.Printf("new ChildNode Keys: %s - %s\n", right.Keys[0], right.Keys[len(right.Keys)-1])
 	if node.Leaf {
 		node.NextLeafNode = right
 	}
+	//fmt.Printf("Node Keys: %s - %s\n", node.Keys[0], node.Keys[len(node.Keys)-1])
+	//fmt.Printf("new ChildNode Keys: %s - %s\n", right.Keys[0], right.Keys[len(right.Keys)-1])
+	fmt.Printf("after insertChildNodeByKey -> centerKey=%s\n", centerKey)
 	err := node.Parent.insertChildNodeByKey(right, centerKey)
 	//fmt.Printf("after insertChildNodeByKey -> len(Parent.node.Keys)=%v\n", len(node.Parent.Keys))
 	//fmt.Printf("after insertChildNodeByKey -> len(node.Keys)=%v\n", len(node.Keys))
@@ -333,7 +339,7 @@ func (node *BtreeNode) insertChildNodeByKey(child *BtreeNode, key []byte) error 
 			break
 		}
 	}
-	//fmt.Printf("insertChildNodeByKey(child,%s)\n", key)
+	fmt.Printf("insertChildNodeByKey(child,%s)\n", key)
 	//fmt.Printf("node.Keys(len:%v): %s - %s\n", len(node.Keys), node.Keys[0], node.Keys[len(node.Keys)-1])
 	//fmt.Printf("index=%v\n", index)
 	//fmt.Printf("len(node.Pointers)=%v\n", len(node.Pointers))

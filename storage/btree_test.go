@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
@@ -48,17 +49,18 @@ func TestBtree(t *testing.T) {
 		}
 	*/
 
-	btree, err := NewBtree(ts1, 16, 16)
+	//btree, err := NewBtree(ts1, 16, 16)
+	btree, err := NewBtree(ts1, 128, 128)
 	if err != nil {
 		t.Errorf("NewBtree error:%v", err)
 	}
 
-	keys := make([][]byte, 4000)
+	keys := make([][]byte, 70)
 	for i := range keys {
 		//keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
 		keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-1-i))
 	}
-	//rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
+	rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
 
 	rid := newRid(datafile1, 0, 0)
 	for i, key := range keys {
