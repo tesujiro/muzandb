@@ -54,7 +54,7 @@ func TestBtree(t *testing.T) {
 		t.Errorf("NewBtree error:%v", err)
 	}
 
-	keys := make([][]byte, 5)
+	keys := make([][]byte, 7)
 	for i := range keys {
 		keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
 		//keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-1-i))
