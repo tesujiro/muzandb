@@ -32,15 +32,33 @@ func NewBtree(ts *Tablespace, keylen uint8, valuelen uint8) (*Btree, error) {
 }
 
 func (bt *Btree) PrintLeaves() {
-	/*
-		for j, key := range bt.root.Keys {
-			fmt.Printf("root:\tkey[%v]:%s\n", j, key)
+	fmt.Printf("root:")
+	for _, key := range bt.root.Keys {
+		fmt.Printf("%s ", key)
+	}
+	fmt.Printf("\n")
+	for i, node := range bt.root.Pointers {
+		fmt.Printf("node[%v]:", i)
+		for _, key := range node.Keys {
+			fmt.Printf(" %s", key)
 		}
-	*/
+		fmt.Printf("\n")
+	}
 
 	node := bt.root
+	fmt.Printf("root:\n")
 	for !node.Leaf {
-		fmt.Printf("node.Pointers(len:%v)\n", len(node.Pointers))
+		fmt.Printf("keys: ")
+		for _, key := range node.Keys {
+			fmt.Printf("%s ", key)
+		}
+		/*
+			for _, key := range node.Keys {
+				fmt.Printf(" %s", key)
+			}
+		*/
+		fmt.Printf("->node.Pointers(len:%v):", len(node.Pointers))
+		fmt.Printf("\n")
 		node = node.Pointers[0]
 	}
 	//fmt.Printf("leafTop : %v\n", *node)
@@ -48,11 +66,13 @@ func (bt *Btree) PrintLeaves() {
 	var prev []byte
 	for i := 0; ; i++ {
 		//fmt.Printf("node:%v len(keys):%v\n", i, len(node.Keys))
-		fmt.Printf("node:%v len(keys):%v len(parent.Keys):%v", i, len(node.Keys), len(node.Parent.Keys))
-		for _, key := range node.Parent.Keys {
-			fmt.Printf(" %s", key)
-		}
-		fmt.Printf("\n")
+		/*
+			fmt.Printf("node:%v len(keys):%v len(parent.Keys):%v", i, len(node.Keys), len(node.Parent.Keys))
+			for _, key := range node.Parent.Keys {
+				fmt.Printf(" %s", key)
+			}
+			fmt.Printf("\n")
+		*/
 
 		for j, key := range node.Keys {
 			fmt.Printf("node:%v\tkey[%v]:%s\n", i, j, key)
@@ -87,6 +107,13 @@ type BtreeNode struct {
 	Pointers     []*BtreeNode // for non leaf nodes
 	NextLeafNode *BtreeNode   // for leaf nodes
 	//maxPointers  int
+}
+
+func printKeys(keys [][]byte) {
+	for _, key := range keys {
+		fmt.Printf(" %s", key)
+	}
+	fmt.Printf("\n")
 }
 
 //func (bt *Btree) newNode(page *Page) *BtreeNode {
@@ -146,6 +173,7 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 func (node *BtreeNode) newChildNode(keys [][]byte) *BtreeNode {
 	newKeys := make([][]byte, len(keys))
 	copy(newKeys, keys)
+	fmt.Println("newChlidKey")
 	return &BtreeNode{
 		Parent:   node,
 		Leaf:     node.Leaf,
@@ -156,6 +184,9 @@ func (node *BtreeNode) newChildNode(keys [][]byte) *BtreeNode {
 
 func (node *BtreeNode) insert(key []byte, rid rid) error {
 
+	if node == nil {
+		fmt.Println("node==nil")
+	}
 	if !node.Leaf {
 		if len(node.Keys)+1 != len(node.Pointers) {
 			fmt.Printf("insert(%s) WARNING len(node.Keys):%v len(node.Pointes):%v\n", key, len(node.Keys), len(node.Pointers))
@@ -166,17 +197,24 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 		switch result := bytes.Compare(key, k); {
 		case result < 0:
 			if node.Leaf {
+				fmt.Printf("insertAt 1 \n")
 				err := node.insertAt(key, rid, i)
-				if err == NodeOverflowError && node.Parent == nil {
-					fmt.Println("split 1")
-					return node.split()
-				}
+				/*
+					if err == NodeOverflowError && node.Parent == nil {
+						fmt.Println("split 1")
+						return node.split()
+					}
+				*/
 				return err
 			} else {
+				fmt.Println("insert 1")
 				err := node.Pointers[i].insert(key, rid)
 				//fmt.Printf("split 2 node.Pointers[%v].Keys=%v\n", i, len(node.Pointers[i].Keys))
-				for err == NodeOverflowError {
+				if err == NodeOverflowError {
 					err = node.Pointers[i].split()
+					if err != nil {
+						return err
+					}
 				}
 				/*
 					if err == NodeOverflowError {
@@ -186,16 +224,24 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 						return err2
 					}
 				*/
-				return err
+				if len(node.Keys) > node.Capacity {
+					return NodeOverflowError
+				}
+				return nil
 			}
 		case result == 0:
 			return DuplicateKeyError
 		}
 	}
+	fmt.Printf("right most pointer for %s\n", key)
 	// right most pointer
 	if node.Leaf {
+		fmt.Printf("insertAt 2 key=%s\n", key)
 		err := node.insertAt(key, rid, len(node.Keys))
-		if err == NodeOverflowError && node.Parent == nil {
+		fmt.Printf(" --> keys:")
+		printKeys(node.Keys)
+		//if err == NodeOverflowError && node.Parent == nil {
+		if err == NodeOverflowError {
 			fmt.Println("split 3")
 			return node.split()
 		}
@@ -216,16 +262,29 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 			//return fmt.Errorf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 			fmt.Printf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 		}
+		fmt.Printf("insert 2 i=%v key=%s\n", i, key)
 		err := node.Pointers[i].insert(key, rid)
 		if err == NodeOverflowError {
+			fmt.Printf("insert 2 -> NodeOverflowError\n")
+			fmt.Printf("node.Pointers[%v].Keys:", i)
+			printKeys(node.Pointers[i].Keys)
 			//fmt.Printf("len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
 			//fmt.Printf("split 4 len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
 			err2 := node.Pointers[i].split()
-			if err2 == NodeOverflowError && node.Parent == nil {
-				fmt.Printf("split 5\n")
-				return node.split()
+			if err2 != nil {
+				return err2
 			}
-			return err2
+			//if err2 == NodeOverflowError && node.Parent == nil {
+			/*
+				if err2 == NodeOverflowError {
+					fmt.Printf("split 5\n")
+					return node.split()
+				}
+			*/
+			if len(node.Keys) > node.Capacity {
+				return NodeOverflowError
+			}
+			return nil
 		}
 		return err
 	}
@@ -236,8 +295,8 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 func (node *BtreeNode) split() error {
 	//fmt.Println("split()")
 	center := node.Capacity / 2
-	fmt.Printf("node.Capacity=%v\tlen(node.Keys)=%v\n", node.Capacity, len(node.Keys))
 	centerKey := node.Keys[center]
+	fmt.Printf("node.Capacity=%v\tlen(node.Keys)=%v centerKey=%s\n", node.Capacity, len(node.Keys), centerKey)
 
 	if node.Parent == nil {
 		//
@@ -259,8 +318,6 @@ func (node *BtreeNode) split() error {
 			left.Rids = node.Rids[:center]
 			right.Rids = node.Rids[center:]
 			node.Rids = []rid{}
-			//fmt.Printf("left.Keys=%v\n", left.Keys)
-			//fmt.Printf("right.Keys=%v\n", right.Keys)
 			left.NextLeafNode = right
 		} else {
 			//
@@ -270,17 +327,19 @@ func (node *BtreeNode) split() error {
 			//                Key1
 			//            /           \
 			//  P0 | Key0 | P1      NIL | Key1 | P2 | Keys2 | P3
-			//fmt.Println("split()=>root && Non Leaf")
-			//fmt.Printf("len(node.Pointers)=%v\n", len(node.Pointers))
-			//left.Pointers = node.Pointers[:center]
-			//left.Pointers = node.Pointers[:center+1]
+			//
 			left.Pointers = make([]*BtreeNode, len(node.Pointers[:center+1]))
 			copy(left.Pointers, node.Pointers[:center+1])
+			for _, child := range left.Pointers {
+				child.Parent = left
+			}
+
 			right.Pointers = make([]*BtreeNode, len(node.Pointers[center:]))
 			copy(right.Pointers, node.Pointers[center:])
-			//right.Pointers[0] = nil
-			//right.Pointers = node.Pointers[center+1:]
-			//right.Pointers = append([]*BtreeNode{nil}, node.Pointers[center+1:]...)
+			right.Pointers[0] = nil
+			for _, child := range right.Pointers[1:] {
+				child.Parent = right
+			}
 		}
 		node.Pointers = []*BtreeNode{left, right}
 
@@ -312,14 +371,16 @@ func (node *BtreeNode) split() error {
 	//fmt.Printf("Node Keys: %s - %s\n", node.Keys[0], node.Keys[len(node.Keys)-1])
 	//fmt.Printf("new ChildNode Keys: %s - %s\n", right.Keys[0], right.Keys[len(right.Keys)-1])
 	fmt.Printf("before insertChildNodeByKey -> centerKey=%s\n", centerKey)
-	err := node.Parent.insertChildNodeByKey(right, centerKey)
+	return node.Parent.insertChildNodeByKey(right, centerKey)
 	//fmt.Printf("after insertChildNodeByKey -> len(Parent.node.Keys)=%v\n", len(node.Parent.Keys))
 	//fmt.Printf("after insertChildNodeByKey -> len(node.Keys)=%v\n", len(node.Keys))
-	for err == NodeOverflowError {
-		err = node.Parent.split()
-	}
+	/*
+		for err == NodeOverflowError {
+			err = node.Parent.split()
+		}
+	*/
 
-	return err
+	//return nil
 }
 
 func (node *BtreeNode) insertAt(key []byte, rid rid, index int) error {
@@ -369,6 +430,7 @@ func (node *BtreeNode) insertChildNodeByKey(child *BtreeNode, key []byte) error 
 
 	fmt.Printf("insertChildNodeByKey -> len(node.Keys)=%v\n", len(node.Keys))
 	if len(node.Keys) > node.Capacity {
+		//if len(child.Keys) > node.Capacity {
 		return NodeOverflowError
 	}
 	return nil
