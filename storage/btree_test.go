@@ -6,6 +6,14 @@ import (
 	"testing"
 )
 
+type dataOrder uint8
+
+const (
+	ascendOrder dataOrder = iota
+	descendOrder
+	randomOrder
+)
+
 func TestBtree(t *testing.T) {
 
 	pm := startPageManager()
@@ -49,34 +57,61 @@ func TestBtree(t *testing.T) {
 		}
 	*/
 
-	//btree, err := NewBtree(ts1, 16, 16)
-	btree, err := NewBtree(ts1, 200, 200)
-	if err != nil {
-		t.Errorf("NewBtree error:%v", err)
+	tests := []struct {
+		order    dataOrder
+		elements int
+		keylen   uint8
+		valuelen uint8
+	}{
+		{order: ascendOrder, elements: 50, keylen: 200, valuelen: 200},
+		{order: descendOrder, elements: 50, keylen: 200, valuelen: 200},
+		{order: randomOrder, elements: 50, keylen: 200, valuelen: 200},
+		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
+		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
+		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
+		{order: ascendOrder, elements: 10000, keylen: 16, valuelen: 16},
+		{order: descendOrder, elements: 10000, keylen: 16, valuelen: 16},
+		{order: randomOrder, elements: 10000, keylen: 16, valuelen: 16},
 	}
 
-	keys := make([][]byte, 1500)
-	for i := range keys {
-		keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
-		//keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-1-i))
-	}
-	rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
-
-	for _, key := range keys {
-		fmt.Printf("%s ->", key)
-	}
-	fmt.Println()
-
-	rid := newRid(datafile1, 0, 0)
-	for i, key := range keys {
-		//for i, key := range keys[:len(keys)-1] {
-		fmt.Printf("================== btree Insert key: %s =========\n", key)
-		err = btree.Insert([]byte(key), rid)
+	for testNumber, test := range tests {
+		btree, err := NewBtree(ts1, test.keylen, test.valuelen)
 		if err != nil {
-			t.Errorf("Insert error:%v at %s (cycle:%v)", err, key, i)
+			t.Errorf("NewBtree error:%v", err)
 		}
+
+		keys := make([][]byte, test.elements)
+		for i := range keys {
+			switch test.order {
+			case ascendOrder:
+				keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
+			case descendOrder:
+				keys[i] = []byte(fmt.Sprintf("key%5.5v", len(keys)-1-i))
+			case randomOrder:
+				keys[i] = []byte(fmt.Sprintf("key%5.5v", i))
+			}
+		}
+		if test.order == randomOrder {
+			rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
+		}
+
+		rid := newRid(datafile1, 0, 0)
+		for i, key := range keys {
+			err = btree.Insert([]byte(key), rid)
+			if err != nil {
+				t.Errorf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
+			}
+		}
+		if !btree.checkLeafKeyOrder() {
+			t.Errorf("Testcase[%v]: Leaf keys are not in ascend order.", testNumber)
+		}
+
+		key := []byte(fmt.Sprintf("key%5.5v", rand.Intn(test.elements)))
+		b, r := btree.Find(key)
+		if !b {
+			t.Errorf("Testcase[%v]: No key: %s in B-tree.", testNumber, key)
+		}
+		_ = r
+		//fmt.Printf("Find(%s):%v %v\n", key, b, r)
 	}
-
-	btree.PrintLeaves()
-
 }

@@ -7,9 +7,8 @@ import (
 	"os"
 )
 
-const PageSize = 512
-
-//const PageSize = 1024
+//const PageSize = 512
+const PageSize = 1024
 const dataPath = "./data"
 const pageMangerMetaPath = dataPath + "/page_manager.gob"
 

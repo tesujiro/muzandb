@@ -74,6 +74,10 @@ type rid struct {
 	slotnum uint16
 }
 
+func (r rid) String() string {
+	return fmt.Sprintf("File:%s Pagenum:%d Slotnum:%d", r.file.Path, r.pagenum, r.slotnum)
+}
+
 const ridBytes = 7
 
 func newRid(file *File, pagenum uint32, slotnum uint16) rid {
