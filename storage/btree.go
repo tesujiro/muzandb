@@ -29,53 +29,6 @@ func NewBtree(ts *Tablespace, keylen uint8, valuelen uint8) (*Btree, error) {
 	return &bt, nil
 }
 
-func (bt *Btree) PrintLeaves() {
-	node := bt.root
-	for !node.Leaf {
-		node = node.Pointers[0]
-	}
-	count := 0
-	var prev []byte
-	for i := 0; ; i++ {
-		for j, key := range node.Keys {
-			if bytes.Compare(key, prev) < 0 {
-				fmt.Printf("*** node:%v\tkey[%v]:%s prev:%s\n", i, j, key, prev)
-			}
-			fmt.Printf("node:%v\tkey[%v]:%s\n", i, j, key)
-			prev = key
-			count++
-		}
-		if node.NextLeafNode == nil {
-			break
-		}
-		node = node.NextLeafNode
-	}
-	fmt.Printf("key count:%v\n", count)
-}
-
-func (bt *Btree) checkLeafKeyOrder() bool {
-	node := bt.root
-	for !node.Leaf {
-		node = node.Pointers[0]
-	}
-	count := 0
-	var prev []byte
-	for i := 0; ; i++ {
-		for _, key := range node.Keys {
-			if bytes.Compare(key, prev) < 0 {
-				return false
-			}
-			prev = key
-			count++
-		}
-		if node.NextLeafNode == nil {
-			break
-		}
-		node = node.NextLeafNode
-	}
-	return true
-}
-
 // BtreeNode represents a node for "B+tree"
 type BtreeNode struct {
 	Tablespace   *Tablespace
@@ -102,7 +55,7 @@ func (bt *Btree) newRootNode() (*BtreeNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Tablepace.NewPage()=%v\n", page)
+	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
 		Tablespace: bt.tablespace,
 		Page:       page,
@@ -119,7 +72,7 @@ func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Tablepace.NewPage()=%v\n", page)
+	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
 		Tablespace: node.Tablespace,
 		Page:       page,
@@ -135,6 +88,42 @@ func (node *BtreeNode) overflow() bool {
 		return false
 	}
 	return len(node.Keys) > node.Capacity
+}
+
+/*
+	Tablespace   *Tablespace
+	Page         *Page
+	Parent       *BtreeNode
+	Leaf         bool
+	Capacity     int //Max number of Keys
+	Keys         [][]byte
+	Rids         []rid        // Only leaf nodes have values
+	Pointers     []*BtreeNode // for non leaf nodes
+	NextLeafNode *BtreeNode   // for leaf nodes
+*/
+
+//func (node *BtreeNode) ToPageData() (*PageData, error) {
+func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
+	// Header: Parent
+	// Header: Leaf
+	// Header: Capacity
+
+	if node.Leaf {
+		// Keys
+		// Rids
+		// Header: NextLeafNode
+
+	} else {
+		// Header:
+		// Keys
+		// Pointers
+
+	}
+	return nil, nil
+}
+
+func (btree *Btree) ToNode(data *PageData) (*BtreeNode, error) {
+	return nil, nil
 }
 
 func (bt *Btree) Insert(key []byte, rid rid) error {
@@ -431,3 +420,50 @@ func (bt *Btree) Delete(key []byte) error {
 func (bt *Btree) SearchRange(key1, key2 []byte) error {
 }
 */
+
+func (bt *Btree) PrintLeaves() {
+	node := bt.root
+	for !node.Leaf {
+		node = node.Pointers[0]
+	}
+	count := 0
+	var prev []byte
+	for i := 0; ; i++ {
+		for j, key := range node.Keys {
+			if bytes.Compare(key, prev) < 0 {
+				fmt.Printf("*** node:%v\tkey[%v]:%s prev:%s\n", i, j, key, prev)
+			}
+			fmt.Printf("node:%v\tkey[%v]:%s\n", i, j, key)
+			prev = key
+			count++
+		}
+		if node.NextLeafNode == nil {
+			break
+		}
+		node = node.NextLeafNode
+	}
+	fmt.Printf("key count:%v\n", count)
+}
+
+func (bt *Btree) checkLeafKeyOrder() bool {
+	node := bt.root
+	for !node.Leaf {
+		node = node.Pointers[0]
+	}
+	count := 0
+	var prev []byte
+	for i := 0; ; i++ {
+		for _, key := range node.Keys {
+			if bytes.Compare(key, prev) < 0 {
+				return false
+			}
+			prev = key
+			count++
+		}
+		if node.NextLeafNode == nil {
+			break
+		}
+		node = node.NextLeafNode
+	}
+	return true
+}

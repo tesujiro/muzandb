@@ -14,6 +14,8 @@ const (
 	IndexNonLeafPage
 )
 
+type PageData []byte
+
 type Page struct {
 	file    *File
 	pagenum uint32
@@ -22,6 +24,15 @@ type Page struct {
 	data   []byte
 	header pageHeader
 }
+
+/*
+type pagePointer struct {
+	file    *File
+	pagenum uint32
+}
+*/
+
+const pagePointerBytes = 5
 
 func (p *Page) String() string {
 	return fmt.Sprintf("Page: file.path=%v pagenum=%v", p.file.Path, p.pagenum)
@@ -99,13 +110,6 @@ func (rid rid) Bytes() []byte {
 	endian.PutUint16(slotnum_b, rid.slotnum)
 	return append(append(rid_b, pagenum_b...), slotnum_b...)
 }
-
-type pagePointer struct {
-	file    *File
-	pagenum uint32
-}
-
-const pagePointerBytes = 5
 
 func newPage(file *File, pagenum uint32, bl []byte) *Page {
 	p := &Page{file: file, pagenum: pagenum}
