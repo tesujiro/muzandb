@@ -78,9 +78,10 @@ func (bt *Btree) checkLeafKeyOrder() bool {
 
 // BtreeNode represents a node for "B+tree"
 type BtreeNode struct {
+	Tablespace   *Tablespace
+	Page         *Page
 	Parent       *BtreeNode
 	Leaf         bool
-	Page         *Page
 	Capacity     int //Max number of Keys
 	Keys         [][]byte
 	Rids         []rid        // Only leaf nodes have values
@@ -96,33 +97,37 @@ func printKeys(keys [][]byte) {
 	fmt.Printf("\n")
 }
 
-//func (bt *Btree) newNode(page *Page) *BtreeNode {
-func (bt *Btree) newNode() (*BtreeNode, error) {
+func (bt *Btree) newRootNode() (*BtreeNode, error) {
 	page, err := bt.tablespace.NewPage()
 	if err != nil {
 		return nil, err
 	}
-	return &BtreeNode{Page: page}, nil
+	fmt.Printf("Tablepace.NewPage()=%v\n", page)
+	return &BtreeNode{
+		Tablespace: bt.tablespace,
+		Page:       page,
+		Leaf:       true,
+		Capacity:   bt.leafCapacity,
+	}, nil
 }
 
-func (bt *Btree) newLeafNode() (*BtreeNode, error) {
-	node, err := bt.newNode()
+func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
+	newKeys := make([][]byte, len(keys))
+	copy(newKeys, keys)
+
+	page, err := node.Tablespace.NewPage()
 	if err != nil {
 		return nil, err
 	}
-	node.Leaf = true
-	node.Capacity = bt.leafCapacity
-	return node, nil
-}
-
-func (bt *Btree) newNonLeafBtreeNode(page *Page) (*BtreeNode, error) {
-	node, err := bt.newNode()
-	if err != nil {
-		return nil, err
-	}
-	node.Leaf = false
-	node.Capacity = bt.nonLeafCapacity
-	return node, nil
+	fmt.Printf("Tablepace.NewPage()=%v\n", page)
+	return &BtreeNode{
+		Tablespace: node.Tablespace,
+		Page:       page,
+		Parent:     node,
+		Leaf:       node.Leaf,
+		Capacity:   node.Capacity,
+		Keys:       newKeys,
+	}, nil
 }
 
 func (node *BtreeNode) overflow() bool {
@@ -134,7 +139,7 @@ func (node *BtreeNode) overflow() bool {
 
 func (bt *Btree) Insert(key []byte, rid rid) error {
 	if bt.root == nil {
-		node, err := bt.newLeafNode() //??????TODO:
+		node, err := bt.newRootNode() //??????TODO:
 		if err != nil {
 			fmt.Println("new page for root node failed")
 			return err
@@ -157,17 +162,6 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 		return bt.root.split()
 	}
 	return nil
-}
-
-func (node *BtreeNode) newChildNode(keys [][]byte) *BtreeNode {
-	newKeys := make([][]byte, len(keys))
-	copy(newKeys, keys)
-	return &BtreeNode{
-		Parent:   node,
-		Leaf:     node.Leaf,
-		Capacity: node.Capacity,
-		Keys:     newKeys,
-	}
 }
 
 func (node *BtreeNode) insert(key []byte, rid rid) error {
@@ -280,8 +274,14 @@ func (node *BtreeNode) split() error {
 		//
 		//
 		//fmt.Println("split()=>root")
-		left := node.newChildNode(node.Keys[:center])
-		right := node.newChildNode(node.Keys[center:])
+		left, err := node.newChildNode(node.Keys[:center])
+		if err != nil {
+			return err
+		}
+		right, err := node.newChildNode(node.Keys[center:])
+		if err != nil {
+			return err
+		}
 		//node.Capacity =   //TODO: change Capacity
 		node.Keys = [][]byte{centerKey}
 		if node.Leaf {
@@ -316,7 +316,10 @@ func (node *BtreeNode) split() error {
 
 		return nil
 	}
-	right := node.Parent.newChildNode(node.Keys[center:])
+	right, err := node.Parent.newChildNode(node.Keys[center:])
+	if err != nil {
+		return err
+	}
 	newKeys := make([][]byte, len(node.Keys[:center]))
 	copy(newKeys, node.Keys[:center])
 	node.Keys = newKeys
@@ -340,7 +343,7 @@ func (node *BtreeNode) split() error {
 		node.Pointers = newPointers
 		//fmt.Printf("After split left pointers(len:%v) right pointers(len:%v)\n", len(node.Pointers), len(right.Pointers))
 	}
-	err := node.Parent.insertChildNodeByKey(right, centerKey)
+	err = node.Parent.insertChildNodeByKey(right, centerKey)
 	if err != nil {
 		return err
 	}

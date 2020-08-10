@@ -23,6 +23,10 @@ type Page struct {
 	header pageHeader
 }
 
+func (p *Page) String() string {
+	return fmt.Sprintf("Page: file.path=%v pagenum=%v", p.file.Path, p.pagenum)
+}
+
 /*
 func (p *Page) Bytes() []byte {
 }

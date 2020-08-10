@@ -115,13 +115,14 @@ func (ts *Tablespace) addFile(file *File) error {
 }
 
 func (ts *Tablespace) NewPage() (*Page, error) {
+	// Roundrobin
 	// TODO: least used / all
 	pagenum := uint32(1 << 31)
 	var target *File
 	for _, file := range ts.File {
 		if file.CurPage < pagenum && file.CurPage+1 < file.Pages {
 			target = file
-			pagenum = file.Pages
+			pagenum = file.CurPage
 		}
 	}
 	return target.newPage()

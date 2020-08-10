@@ -27,6 +27,7 @@ func TestBtree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PageManger.newTablespace() error:%v", err)
 	}
+
 	ts2, err := pm.NewTablespace("DATASPACE1")
 	if err != nil {
 		t.Fatalf("PageManger.newTablespace() error:%v", err)
@@ -75,9 +76,10 @@ func TestBtree(t *testing.T) {
 	}
 
 	for testNumber, test := range tests {
+		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
 		btree, err := NewBtree(ts1, test.keylen, test.valuelen)
 		if err != nil {
-			t.Errorf("NewBtree error:%v", err)
+			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}
 
 		keys := make([][]byte, test.elements)
