@@ -1,20 +1,25 @@
 package storage
 
-//func (node *BtreeNode) ToPageData() (*PageData, error) {
-func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
+func (btree *Btree) ToPageDataHeader(node *BtreeNode) (*PageData, error) {
+	// Header: Page Type
 	// Header: Parent Page Pointer
 	// Header: Leaf
 	// Header: Capacity
+	if node.Leaf {
+		// Header: NextLeafNode
+	}
 
+	return nil, nil
+}
+
+//func (node *BtreeNode) ToPageData() (*PageData, error) {
+func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	if node.Leaf {
 		// Keys
 		// Rids
-		// Header: NextLeafNode
-
 	} else {
 		// Keys
 		// Pointers: Child Page Pointers
-
 	}
 	return nil, nil
 }

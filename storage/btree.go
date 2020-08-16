@@ -90,42 +90,6 @@ func (node *BtreeNode) overflow() bool {
 	return len(node.Keys) > node.Capacity
 }
 
-/*
-	Tablespace   *Tablespace
-	Page         *Page
-	Parent       *BtreeNode
-	Leaf         bool
-	Capacity     int //Max number of Keys
-	Keys         [][]byte
-	Rids         []rid        // Only leaf nodes have values
-	Pointers     []*BtreeNode // for non leaf nodes
-	NextLeafNode *BtreeNode   // for leaf nodes
-*/
-
-//func (node *BtreeNode) ToPageData() (*PageData, error) {
-func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
-	// Header: Parent
-	// Header: Leaf
-	// Header: Capacity
-
-	if node.Leaf {
-		// Keys
-		// Rids
-		// Header: NextLeafNode
-
-	} else {
-		// Header:
-		// Keys
-		// Pointers
-
-	}
-	return nil, nil
-}
-
-func (btree *Btree) ToNode(data *PageData) (*BtreeNode, error) {
-	return nil, nil
-}
-
 func (bt *Btree) Insert(key []byte, rid rid) error {
 	if bt.root == nil {
 		node, err := bt.newRootNode() //??????TODO:
