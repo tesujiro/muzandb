@@ -23,10 +23,10 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	i += 4
 
 	// Header: Parent Page Pointer
-	if node.Parent.Page != nil {
-		header[i] = byte(node.Parent.Page.file.FID)
+	if node.Parent.page != nil {
+		header[i] = byte(node.Parent.page.file.FID)
 		i += 1
-		endian.PutUint32(header[i:], node.Parent.Page.pagenum)
+		endian.PutUint32(header[i:], node.Parent.page.pagenum)
 		i += 4
 	} else {
 		i += 5
@@ -46,9 +46,9 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 
 	// Header: NextLeafNode
 	if node.Leaf {
-		header[i] = byte(node.NextLeaf.Page.file.FID)
+		header[i] = byte(node.NextLeaf.page.file.FID)
 		i += 1
-		endian.PutUint32(header[i:], node.NextLeaf.Page.pagenum)
+		endian.PutUint32(header[i:], node.NextLeaf.page.pagenum)
 		i += 4
 	}
 
@@ -110,11 +110,11 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	// Header: NextLeafNode
 	if node.Leaf {
 		nextPage := &Page{}
-		node.NextLeaf.Page = nextPage
+		node.NextLeaf.page = nextPage
 
-		node.NextLeaf.Page.file.FID = FID(uint8(data[i]))
+		node.NextLeaf.page.file.FID = FID(uint8(data[i]))
 		i += 1
-		node.NextLeaf.Page.pagenum = endian.Uint32(data[i:])
+		node.NextLeaf.page.pagenum = endian.Uint32(data[i:])
 		i += 4
 	}
 
