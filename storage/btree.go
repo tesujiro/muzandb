@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
+	"github.com/tesujiro/muzan/debug"
 )
 
 // Btree represents "B+Tree"
@@ -34,20 +36,23 @@ type BtreeNode struct {
 	Tablespace   *Tablespace
 	Page         *Page
 	Parent       *BtreeNode
+	ParentPage   *Page
 	Leaf         bool
-	Capacity     int //Max number of Keys
+	Capacity     int        //Max number of Keys
+	NextLeafNode *BtreeNode // for leaf nodes
+	NextLeafPage *Page
 	Keys         [][]byte
 	Rids         []rid        // Only leaf nodes have values
 	Pointers     []*BtreeNode // for non leaf nodes
-	NextLeafNode *BtreeNode   // for leaf nodes
+	PointersPage []*Page
 	//maxPointers  int
 }
 
 func printKeys(keys [][]byte) {
 	for _, key := range keys {
-		fmt.Printf(" %s", key)
+		debug.Printf(" %s", key)
 	}
-	fmt.Printf("\n")
+	debug.Printf("\n")
 }
 
 func (bt *Btree) newRootNode() (*BtreeNode, error) {
@@ -77,6 +82,7 @@ func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
 		Tablespace: node.Tablespace,
 		Page:       page,
 		Parent:     node,
+		ParentPage: node.Page,
 		Leaf:       node.Leaf,
 		Capacity:   node.Capacity,
 		Keys:       newKeys,
@@ -119,8 +125,8 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 
 func (node *BtreeNode) insert(key []byte, rid rid) error {
 
-	//fmt.Printf("+++ insert key: %s --> node keys:", key)
-	//printKeys(node.Keys)
+	debug.Printf("+++ insert key: %s --> node keys:", key)
+	printKeys(node.Keys)
 	if !node.Leaf {
 		if len(node.Keys)+1 != len(node.Pointers) {
 			fmt.Printf("insert(%s) WARNING len(node.Keys):%v len(node.Pointes):%v\n", key, len(node.Keys), len(node.Pointers))
@@ -208,8 +214,8 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 }
 
 func (node *BtreeNode) split() error {
-	//fmt.Printf("++++++ split keys:")
-	//printKeys(node.Keys)
+	debug.Printf("++++++ split keys:")
+	printKeys(node.Keys)
 	//fmt.Printf("split node.Pointers : %v\n", node.Pointers)
 
 	center := node.Capacity / 2
@@ -243,6 +249,7 @@ func (node *BtreeNode) split() error {
 			right.Rids = node.Rids[center:]
 			node.Rids = []rid{}
 			left.NextLeafNode = right
+			left.NextLeafPage = right.Page
 		} else {
 			//
 			//  P0 | Key0 | P1 | Key1 | P2 | Keys2 | P3
@@ -283,7 +290,11 @@ func (node *BtreeNode) split() error {
 		right.Rids = newRids
 		//TODO: change node.Rids
 		right.NextLeafNode = node.NextLeafNode
+		if node.NextLeafNode != nil {
+			right.NextLeafPage = node.NextLeafNode.Page
+		}
 		node.NextLeafNode = right
+		node.NextLeafPage = right.Page
 	} else {
 		right.Pointers = append([]*BtreeNode{nil}, node.Pointers[center+1:]...)
 		for _, child := range right.Pointers {

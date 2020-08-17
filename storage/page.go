@@ -10,11 +10,15 @@ var endian binary.ByteOrder = binary.BigEndian
 type PageType uint8
 
 const (
-	IndexLeafPage PageType = iota
-	IndexNonLeafPage
+	BtreeLeafPage PageType = iota
+	BtreeNonLeafPage
 )
 
 type PageData []byte
+
+func (pd PageData) String() string {
+	return fmt.Sprintf("%x", []byte(pd))
+}
 
 type Page struct {
 	file    *File
@@ -71,7 +75,7 @@ type pageHeader struct {
 	freeSpacePointer uint16
 }
 
-const pageHeaderBytes = 4
+const pageHeaderBytes = 18
 
 type record []byte
 

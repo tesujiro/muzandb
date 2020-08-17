@@ -16,6 +16,8 @@ const (
 
 func TestBtree(t *testing.T) {
 
+	//debug.On()
+
 	pm := startPageManager()
 
 	indexfile1 := pm.NewFile("./data/indexfile1.dbf", 1024*1024)
@@ -115,5 +117,8 @@ func TestBtree(t *testing.T) {
 		}
 		_ = r
 		//fmt.Printf("Find(%s):%v %v\n", key, b, r)
+
+		data := btree.ToPageDataHeader(btree.root)
+		fmt.Printf("HEADER: %v\n", data)
 	}
 }
