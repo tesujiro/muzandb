@@ -162,13 +162,29 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 					return err
 				}
 			} else {
-				err := node.Pointers[i].node.insert(key, rid)
+				/*
+					err := node.Pointers[i].node.insert(key, rid)
+					if err != nil {
+						return err
+					}
+					//fmt.Printf("split 2 node.Pointers[%v].Keys=%v\n", i, len(node.Pointers[i].Keys))
+					if node.Pointers[i].node.overflow() {
+						err := node.Pointers[i].node.split()
+						if err != nil {
+							return err
+						}
+					}
+				*/
+				child, err := node.Pointers[i].GetNode()
 				if err != nil {
 					return err
 				}
-				//fmt.Printf("split 2 node.Pointers[%v].Keys=%v\n", i, len(node.Pointers[i].Keys))
-				if node.Pointers[i].node.overflow() {
-					err := node.Pointers[i].node.split()
+				err = child.insert(key, rid)
+				if err != nil {
+					return err
+				}
+				if child.overflow() {
+					err := child.split()
 					if err != nil {
 						return err
 					}
@@ -208,18 +224,34 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 			//return fmt.Errorf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 			fmt.Printf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 		}
-		//fmt.Printf("insert 2 i=%v key=%s\n", i, key)
-		err := node.Pointers[i].node.insert(key, rid)
+		/*
+			//fmt.Printf("insert 2 i=%v key=%s\n", i, key)
+			err := node.Pointers[i].node.insert(key, rid)
+			if err != nil {
+				return err
+			}
+			if len(node.Pointers) > i && node.Pointers[i].node.overflow() {
+				//fmt.Printf("insert 2 -> node.Pointer[i].NodeOverflowError\n")
+				//fmt.Printf("node.Pointers[%v].Keys:", i)
+				//printKeys(node.Pointers[i].Keys)
+				//fmt.Printf("len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
+				//fmt.Printf("split 4 len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
+				err2 := node.Pointers[i].node.split()
+				if err2 != nil {
+					return err2
+				}
+			}
+		*/
+		child, err := node.Pointers[i].GetNode()
 		if err != nil {
 			return err
 		}
-		if len(node.Pointers) > i && node.Pointers[i].node.overflow() {
-			//fmt.Printf("insert 2 -> node.Pointer[i].NodeOverflowError\n")
-			//fmt.Printf("node.Pointers[%v].Keys:", i)
-			//printKeys(node.Pointers[i].Keys)
-			//fmt.Printf("len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
-			//fmt.Printf("split 4 len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
-			err2 := node.Pointers[i].node.split()
+		err = child.insert(key, rid)
+		if err != nil {
+			return err
+		}
+		if len(node.Pointers) > i && child.overflow() {
+			err2 := child.split()
 			if err2 != nil {
 				return err2
 			}
@@ -411,13 +443,25 @@ func (node *BtreeNode) find(key []byte) (bool, *rid) {
 		case result < 0 && node.Leaf:
 			return false, nil
 		case result <= 0:
-			return node.Pointers[i].node.find(key)
+			//return node.Pointers[i].node.find(key)
+			child, err := node.Pointers[i].GetNode()
+			if err != nil {
+				fmt.Println("GetNode() error")
+				return false, nil
+			}
+			return child.find(key)
 		}
 	}
 	if node.Leaf {
 		return false, nil
 	}
-	return node.Pointers[len(node.Keys)].node.find(key)
+	//return node.Pointers[len(node.Keys)].node.find(key)
+	child, err := node.Pointers[len(node.Keys)].GetNode()
+	if err != nil {
+		fmt.Println("GetNode() error")
+		return false, nil
+	}
+	return child.find(key)
 }
 
 /*
@@ -429,9 +473,14 @@ func (bt *Btree) SearchRange(key1, key2 []byte) error {
 */
 
 func (bt *Btree) PrintLeaves() {
+	var err error
 	node := bt.root
 	for !node.Leaf {
-		node = node.Pointers[0].node
+		//node = node.Pointers[0].node
+		node, err = node.Pointers[0].GetNode()
+		if err != nil {
+			fmt.Println("GetNode() error")
+		}
 	}
 	count := 0
 	var prev []byte
@@ -444,10 +493,16 @@ func (bt *Btree) PrintLeaves() {
 			prev = key
 			count++
 		}
-		if node.NextLeaf.node == nil {
+		next, err := node.NextLeaf.GetNode()
+		if err != nil {
+			fmt.Println("GetNode() error")
+		}
+		//if node.NextLeaf.node == nil {
+		if next == nil {
 			break
 		}
-		node = node.NextLeaf.node
+		//node = node.NextLeaf.node
+		node = next
 	}
 	fmt.Printf("key count:%v\n", count)
 }
