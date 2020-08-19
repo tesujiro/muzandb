@@ -67,6 +67,14 @@ func (ptr *BtreeNodePtr) GetPage() *Page {
 	return ptr.page
 }
 
+func (ptr *BtreeNodePtr) SetNode(node *BtreeNode) {
+	ptr.node = node
+}
+
+func (ptr *BtreeNodePtr) SetPage(page *Page) {
+	ptr.page = page
+}
+
 func printKeys(keys [][]byte) {
 	for _, key := range keys {
 		debug.Printf(" %s", key)
@@ -349,9 +357,15 @@ func (node *BtreeNode) split() error {
 		copy(newRids, node.Rids[center:])
 		right.Rids = newRids
 		//TODO: change node.Rids
-		right.NextLeaf.node = node.NextLeaf.node
+		//right.NextLeaf.node = node.NextLeaf.node
+		nextnode, err := node.NextLeaf.GetNode()
+		if err != nil {
+			return err
+		}
+		right.NextLeaf.node = nextnode
 		if node.NextLeaf.node != nil {
-			right.NextLeaf.page = node.NextLeaf.node.Page
+			//right.NextLeaf.page = node.NextLeaf.node.Page
+			right.NextLeaf.page = node.NextLeaf.GetPage()
 		}
 		node.NextLeaf.node = right
 		node.NextLeaf.page = right.Page
@@ -522,7 +536,12 @@ func (bt *Btree) checkLeafKeyOrder() bool {
 			prev = key
 			count++
 		}
-		if node.NextLeaf.node == nil {
+		nextnode, err := node.NextLeaf.GetNode()
+		if err != nil {
+			fmt.Printf("GetNode() error:%v\n", err)
+			return false
+		}
+		if nextnode == nil {
 			break
 		}
 		node = node.NextLeaf.node
