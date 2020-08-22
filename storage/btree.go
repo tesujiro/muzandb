@@ -40,10 +40,8 @@ type BtreeNode struct {
 	Capacity   int          //Max number of Keys
 	NextLeaf   BtreeNodePtr //for leaf nodes
 	Keys       [][]byte
-	Rids       []rid // Only leaf nodes have values
-	//Pointers     []*BtreeNode // for non leaf nodes
-	//PointersPage []*Page
-	Pointers []BtreeNodePtr // for non leaf nodes
+	Rids       []rid          // Only leaf nodes have values
+	Pointers   []BtreeNodePtr // for non leaf nodes
 	//maxPointers  int
 }
 
@@ -108,12 +106,10 @@ func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
 	return &BtreeNode{
 		Tablespace: node.Tablespace,
 		Page:       page,
-		//Parent:     node,
-		//ParentPage: node.Page,
-		Parent:   BtreeNodePtr{node: node, page: node.Page},
-		Leaf:     node.Leaf,
-		Capacity: node.Capacity,
-		Keys:     newKeys,
+		Parent:     BtreeNodePtr{node: node, page: node.Page},
+		Leaf:       node.Leaf,
+		Capacity:   node.Capacity,
+		Keys:       newKeys,
 	}, nil
 }
 
@@ -232,24 +228,6 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 			//return fmt.Errorf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 			fmt.Printf("node.Pointers length %v too short for len(node.Keys)=%v \n", len(node.Pointers), i)
 		}
-		/*
-			//fmt.Printf("insert 2 i=%v key=%s\n", i, key)
-			err := node.Pointers[i].node.insert(key, rid)
-			if err != nil {
-				return err
-			}
-			if len(node.Pointers) > i && node.Pointers[i].node.overflow() {
-				//fmt.Printf("insert 2 -> node.Pointer[i].NodeOverflowError\n")
-				//fmt.Printf("node.Pointers[%v].Keys:", i)
-				//printKeys(node.Pointers[i].Keys)
-				//fmt.Printf("len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
-				//fmt.Printf("split 4 len(node.Pointers[%v].Keys)=%v\n", i, len(node.Pointers[i].Keys))
-				err2 := node.Pointers[i].node.split()
-				if err2 != nil {
-					return err2
-				}
-			}
-		*/
 		child, err := node.Pointers[i].GetNode()
 		if err != nil {
 			return err
@@ -282,7 +260,11 @@ func (node *BtreeNode) split() error {
 	centerKey := node.Keys[center]
 	//fmt.Printf("node.Capacity=%v\tlen(node.Keys)=%v centerKey=%s\n", node.Capacity, len(node.Keys), centerKey)
 
-	if node.Parent.node == nil {
+	parent, err := node.Parent.GetNode()
+	if err != nil {
+		return err
+	}
+	if parent == nil {
 		//
 		//   Key1 | Key2 | Key3
 		//
@@ -308,8 +290,10 @@ func (node *BtreeNode) split() error {
 			left.Rids = node.Rids[:center]
 			right.Rids = node.Rids[center:]
 			node.Rids = []rid{}
-			left.NextLeaf.node = right
-			left.NextLeaf.page = right.Page
+			//left.NextLeaf.node = right
+			//left.NextLeaf.page = right.Page
+			left.NextLeaf.SetNode(right)
+			left.NextLeaf.SetPage(right.Page)
 		} else {
 			//
 			//  P0 | Key0 | P1 | Key1 | P2 | Keys2 | P3
@@ -322,9 +306,13 @@ func (node *BtreeNode) split() error {
 			//left.Pointers = make([]*BtreeNode, len(node.Pointers[:center+1]))
 			left.Pointers = make([]BtreeNodePtr, len(node.Pointers[:center+1]))
 			copy(left.Pointers, node.Pointers[:center+1])
-			for _, child := range left.Pointers {
-				//child.Parent.node = left
-				child.node.Parent.node = left
+			for _, cPtr := range left.Pointers {
+				child, err := cPtr.GetNode()
+				if err != nil {
+					fmt.Println("Get child pointer node")
+					return err
+				}
+				child.Parent.node = left
 			}
 
 			//right.Pointers = make([]*BtreeNode, len(node.Pointers[center:]))
@@ -332,9 +320,15 @@ func (node *BtreeNode) split() error {
 			copy(right.Pointers, node.Pointers[center:])
 			//right.Pointers[0] = nil
 			right.Pointers[0].node = nil
-			for _, child := range right.Pointers[1:] {
-				//child.Parent.node = right
-				child.node.Parent.node = right
+			for _, cPtr := range right.Pointers[1:] {
+				//cPtr.Parent.node = right
+				//cPtr.node.Parent.node = right
+				child, err := cPtr.GetNode()
+				if err != nil {
+					fmt.Println("Get child pointer node")
+					return err
+				}
+				child.Parent.node = right
 			}
 		}
 		//node.Pointers = []*BtreeNode{left, right}
@@ -344,7 +338,7 @@ func (node *BtreeNode) split() error {
 
 		return nil
 	}
-	right, err := node.Parent.node.newChildNode(node.Keys[center:])
+	right, err := parent.newChildNode(node.Keys[center:])
 	if err != nil {
 		return err
 	}
@@ -357,34 +351,35 @@ func (node *BtreeNode) split() error {
 		copy(newRids, node.Rids[center:])
 		right.Rids = newRids
 		//TODO: change node.Rids
-		//right.NextLeaf.node = node.NextLeaf.node
 		nextnode, err := node.NextLeaf.GetNode()
 		if err != nil {
 			return err
 		}
-		right.NextLeaf.node = nextnode
+		right.NextLeaf.SetNode(nextnode)
 		if node.NextLeaf.node != nil {
-			//right.NextLeaf.page = node.NextLeaf.node.Page
-			right.NextLeaf.page = node.NextLeaf.GetPage()
+			right.NextLeaf.SetPage(node.NextLeaf.GetPage())
 		}
-		node.NextLeaf.node = right
-		node.NextLeaf.page = right.Page
+		node.NextLeaf.SetNode(right)
+		node.NextLeaf.SetPage(right.Page)
 	} else {
-		//right.Pointers = append([]*BtreeNode{nil}, node.Pointers[center+1:]...)
 		right.Pointers = append([]BtreeNodePtr{BtreeNodePtr{node: nil}}, node.Pointers[center+1:]...)
-		for _, child := range right.Pointers {
-			if child.node != nil {
-				child.node.Parent.node = right
-				child.node.Parent.page = right.Page
+		for _, cPtr := range right.Pointers {
+			child, err := cPtr.GetNode()
+			if err != nil {
+				fmt.Println("split() get child pointer error")
+				return err
+			}
+			if child != nil {
+				child.Parent.SetNode(right)
+				child.Parent.SetPage(right.Page)
 			}
 		}
-		//newPointers := make([]*BtreeNode, len(node.Pointers[:center+1]))
 		newPointers := make([]BtreeNodePtr, len(node.Pointers[:center+1]))
 		copy(newPointers, node.Pointers[:center+1])
 		node.Pointers = newPointers
 		//fmt.Printf("After split left pointers(len:%v) right pointers(len:%v)\n", len(node.Pointers), len(right.Pointers))
 	}
-	err = node.Parent.node.insertChildNodeByKey(right, centerKey)
+	err = parent.insertChildNodeByKey(right, centerKey)
 	if err != nil {
 		return err
 	}
