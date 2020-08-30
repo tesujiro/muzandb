@@ -60,13 +60,23 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	header := btree.ToPageDataHeader(node)
 	fmt.Printf("HEADER: %v\n", header)
+	if len(*header) > pageHeaderBytes {
+		return nil, fmt.Errorf("header size %v > PageHeaderBytes %v", len(*header), pageHeaderBytes)
+	}
 
+	index := pageHeaderBytes - 1
+
+	// Keys
+	for i, key := range node.Keys {
+		fmt.Printf("Key[%d]: %v\n", i, key)
+	}
 	if node.Leaf {
-		// Keys
 		// Rids
 	} else {
-		// Keys
 		// Pointers: Child Page Pointers
+		for i, ptr := range node.Pointers {
+			fmt.Printf("Ptr[%d]: FID=%v pagenum=%v\n", i, ptr.page.file.FID, ptr.page.pagenum)
+		}
 	}
 	return nil, nil
 }
