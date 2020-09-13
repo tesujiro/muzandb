@@ -63,7 +63,6 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	return &pd
 }
 
-//func (node *BtreeNode) ToPageData() (*PageData, error) {
 func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	index := 0
 	page := make([]byte, PageSize)
@@ -107,11 +106,11 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	node := &BtreeNode{}
 	data := []byte(*pd)
-	i := 0
+	index := 0
 
 	// Header: Page Type
-	pageType := PageType(data[i])
-	i += 1
+	pageType := PageType(data[index])
+	index += 1
 	if pageType != BtreeLeafPage && pageType != BtreeNonLeafPage {
 		return nil, errors.New("Not a BtreeNode data")
 	}
@@ -119,13 +118,13 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	page := &Page{}
 	node.Page = page
 	// Header: Parent Page Pointer
-	node.Page.file.FID = FID(uint8(data[i]))
-	i += 1
+	node.Page.file.FID = FID(uint8(data[index]))
+	index += 1
 	node.Page.pagenum = endian.Uint32(data[0:])
-	i += 4
+	index += 4
 
 	// Header: Leaf
-	leaf_cap := endian.Uint16(data[i : i+2])
+	leaf_cap := endian.Uint16(data[index : index+2])
 	leaf := (leaf_cap >> 15) == 1
 	switch {
 	case leaf && pageType == BtreeNonLeafPage:
@@ -138,17 +137,48 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 
 	// Header: Capacity
 	node.Capacity = int((leaf_cap << 1) >> 1)
-	i += 2
+	index += 2
+
+	// Header: Capacity
+	numberOfKeys := int(endian.Uint16(data[index : index+2]))
+	index += 2
+	_ = numberOfKeys
 
 	// Header: NextLeafNode
 	if node.Leaf {
 		nextPage := &Page{}
 		node.NextLeaf.page = nextPage
 
-		node.NextLeaf.page.file.FID = FID(uint8(data[i]))
-		i += 1
-		node.NextLeaf.page.pagenum = endian.Uint32(data[i:])
-		i += 4
+		node.NextLeaf.page.file.FID = FID(uint8(data[index]))
+		index += 1
+		node.NextLeaf.page.pagenum = endian.Uint32(data[index:])
+		index += 4
+	}
+
+	index = pageHeaderBytes - 1
+
+	//Keys
+	node.Keys = make([][]byte, numberOfKeys)
+	for i := 0; i < numberOfKeys; i++ {
+		node.Keys[i] = make([]byte, int(btree.keylen))
+		copy(node.Keys[i], data[index:index+int(btree.keylen)])
+		index += int(btree.keylen)
+	}
+
+	// Rid, Pointers
+	if node.Leaf {
+		// Rids
+	} else {
+		// Pointers: Child Page Pointers
+		ptrs := make([]BtreeNodePtr, numberOfKeys+1)
+		for i := 0; i < numberOfKeys+1; i++ {
+			p := Page{}
+			ptrs[i].page = &p
+			node.Pointers[i] = ptrs[i]
+			p.file.FID = FID(data[index])
+			p.pagenum = endian.Uint32(data[index+1:])
+			index += 1 + 4
+		}
 	}
 
 	return nil, nil
