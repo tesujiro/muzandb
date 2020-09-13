@@ -8,6 +8,7 @@ import (
 func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	header := make([]byte, pageHeaderBytes)
 	i := 0
+
 	// Header: Page Type
 	if node.Leaf {
 		header[i] = byte(BtreeLeafPage)
@@ -44,6 +45,12 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	endian.PutUint16(header[i:], ui16)
 	i += 2
 
+	// Number of Keys
+	number := uint16(len(node.Keys))
+	endian.PutUint16(header[i:], number)
+	i += 2
+	//fmt.Printf("number of keys:%v\n", number)
+
 	// Header: NextLeafNode
 	if node.Leaf {
 		header[i] = byte(node.NextLeaf.page.file.FID)
@@ -58,27 +65,43 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 
 //func (node *BtreeNode) ToPageData() (*PageData, error) {
 func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
+	index := 0
+	page := make([]byte, PageSize)
+
+	// Header
 	header := btree.ToPageDataHeader(node)
 	fmt.Printf("HEADER: %v\n", header)
 	if len(*header) > pageHeaderBytes {
 		return nil, fmt.Errorf("header size %v > PageHeaderBytes %v", len(*header), pageHeaderBytes)
 	}
-
-	index := pageHeaderBytes - 1
+	for index = 0; index < pageHeaderBytes; index++ {
+		page[index] = (*header)[index]
+	}
 
 	// Keys
-	for i, key := range node.Keys {
-		fmt.Printf("Key[%d]: %v\n", i, key)
+	for _, key := range node.Keys {
+		//fmt.Printf("Key[%d]: %v\n", i, key)
+		for j, r := range key {
+			page[index+j] = r
+		}
+		index += int(btree.keylen)
 	}
+
+	// Rid, Pointers
 	if node.Leaf {
 		// Rids
 	} else {
 		// Pointers: Child Page Pointers
 		for i, ptr := range node.Pointers {
 			fmt.Printf("Ptr[%d]: FID=%v pagenum=%v\n", i, ptr.page.file.FID, ptr.page.pagenum)
+			page[index] = byte(ptr.page.file.FID)
+			endian.PutUint32(page[index+1:], ptr.page.pagenum)
+			index += 1 + 4
 		}
 	}
-	return nil, nil
+	//fmt.Printf("PAGE: %v\n", page)
+	pd := PageData(page)
+	return &pd, nil
 }
 
 func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
