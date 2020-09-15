@@ -125,5 +125,11 @@ func TestBtree(t *testing.T) {
 			t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
 		}
 		fmt.Printf("PageData: %v\n", data)
+
+		node, err := btree.ToNode(data)
+		if err != nil {
+			t.Errorf("Testcase[%v]: ToNode err: %v", testNumber, err)
+		}
+		fmt.Printf("Loaded Node: %v\n", node)
 	}
 }

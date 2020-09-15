@@ -107,6 +107,7 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	node := &BtreeNode{}
 	data := []byte(*pd)
 	index := 0
+	fmt.Printf("data=%v\n", data)
 
 	// Header: Page Type
 	pageType := PageType(data[index])
@@ -117,6 +118,8 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 
 	page := &Page{}
 	node.Page = page
+	file := &File{}
+	node.Page.file = file
 	// Header: Parent Page Pointer
 	node.Page.file.FID = FID(uint8(data[index]))
 	index += 1
@@ -171,15 +174,17 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	} else {
 		// Pointers: Child Page Pointers
 		ptrs := make([]BtreeNodePtr, numberOfKeys+1)
+		node.Pointers = make([]BtreeNodePtr, numberOfKeys+1)
 		for i := 0; i < numberOfKeys+1; i++ {
 			p := Page{}
 			ptrs[i].page = &p
 			node.Pointers[i] = ptrs[i]
+			p.file = &File{}
 			p.file.FID = FID(data[index])
 			p.pagenum = endian.Uint32(data[index+1:])
 			index += 1 + 4
 		}
 	}
 
-	return nil, nil
+	return node, nil
 }
