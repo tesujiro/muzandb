@@ -130,6 +130,7 @@ func TestBtree(t *testing.T) {
 		if err != nil {
 			t.Errorf("Testcase[%v]: ToNode err: %v", testNumber, err)
 		}
+		fmt.Printf("Origin Node: %v\n", btree.root)
 		fmt.Printf("Loaded Node: %v\n", node)
 	}
 }

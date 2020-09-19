@@ -40,8 +40,11 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	}
 	// Header: Capacity
 	capa := (node.Capacity << 15) >> 15
+	//fmt.Printf("node.Capacity = %v\n", node.Capacity)
 	ui16 = ui16 | uint16(capa)
+	//fmt.Printf("ui16 = %v\n", ui16)
 
+	fmt.Printf("i = %v\n", i)
 	endian.PutUint16(header[i:], ui16)
 	i += 2
 
@@ -115,15 +118,33 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	if pageType != BtreeLeafPage && pageType != BtreeNonLeafPage {
 		return nil, errors.New("Not a BtreeNode data")
 	}
+	//fmt.Printf("pageType=%T\n", pageType)
 
+	// Header: Page Pointer
 	page := &Page{}
 	node.Page = page
 	file := &File{}
 	node.Page.file = file
 	// Header: Parent Page Pointer
 	node.Page.file.FID = FID(uint8(data[index]))
+	//fmt.Printf("node.Page.file.FID=%v\n", node.Page.file.FID)
+	//TODO: FID ->file.path
 	index += 1
-	node.Page.pagenum = endian.Uint32(data[0:])
+	node.Page.pagenum = endian.Uint32(data[index:])
+	//fmt.Printf("data[0:]=%v\n", data[0:])
+	//fmt.Printf("node.Page.pagenum=%v\n", node.Page.pagenum)
+	index += 4
+
+	// Header: Parent Page Pointer
+	parent := &Page{}
+	node.Parent.page = parent
+	file = &File{}
+	node.Parent.page.file = file
+	// Header: Parent Page Pointer
+	node.Parent.page.file.FID = FID(uint8(data[index]))
+	//TODO: FID ->file.path
+	index += 1
+	node.Parent.page.pagenum = endian.Uint32(data[index:])
 	index += 4
 
 	// Header: Leaf
@@ -141,11 +162,13 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	// Header: Capacity
 	node.Capacity = int((leaf_cap << 1) >> 1)
 	index += 2
+	//fmt.Printf("node.Capacity = %v\n", node.Capacity)
 
 	// Header: Capacity
 	numberOfKeys := int(endian.Uint16(data[index : index+2]))
 	index += 2
 	_ = numberOfKeys
+	//fmt.Printf("numberOfKeys = %v\n", numberOfKeys)
 
 	// Header: NextLeafNode
 	if node.Leaf {
@@ -158,7 +181,8 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 		index += 4
 	}
 
-	index = pageHeaderBytes - 1
+	//index = pageHeaderBytes - 1
+	index = pageHeaderBytes
 
 	//Keys
 	node.Keys = make([][]byte, numberOfKeys)
@@ -183,6 +207,7 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 			p.file.FID = FID(data[index])
 			p.pagenum = endian.Uint32(data[index+1:])
 			index += 1 + 4
+			//fmt.Printf("FID:%v pagenum:%v\n", p.file.FID, p.pagenum)
 		}
 	}
 
