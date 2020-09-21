@@ -51,7 +51,7 @@ func TestBtree(t *testing.T) {
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
 	}
-	fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
+	//fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	/*
 		err = pm.Save()
@@ -124,7 +124,7 @@ func TestBtree(t *testing.T) {
 		if err != nil {
 			t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
 		}
-		fmt.Printf("PageData: %v\n", data)
+		//fmt.Printf("PageData: %v\n", data)
 
 		node, err := btree.ToNode(data)
 		if err != nil {

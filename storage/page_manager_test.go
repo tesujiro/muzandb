@@ -32,7 +32,6 @@ func TestPageManager(t *testing.T) {
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", file3, err)
 	}
-	fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	err = pm.Save()
 	if err != nil {
@@ -56,7 +55,6 @@ func TestPageManager(t *testing.T) {
 		t.Errorf("startPageManager result len(pm.Tablespaces[0].File) want: %v actual: %v", 3, len(pm.Tablespaces[0].File))
 
 	}
-	fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	ts0 := pm.Tablespaces[0]
 	page, err := ts0.NewPage()
