@@ -39,7 +39,7 @@ type pagePointer struct {
 const pagePointerBytes = 5
 
 func (p *Page) String() string {
-	return fmt.Sprintf("Page: file.path=%v pagenum=%v", p.file.Path, p.pagenum)
+	return fmt.Sprintf("Page:(file.path=%v, pagenum=%v)", p.file.Path, p.pagenum)
 }
 
 /*

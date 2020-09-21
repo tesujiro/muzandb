@@ -15,6 +15,7 @@ const pageMangerMetaPath = dataPath + "/page_manager.gob"
 type PageManager struct {
 	Tablespaces []*Tablespace
 	LastFID     FID
+	//Files       map[FID]*File
 }
 
 type FID uint8
@@ -112,6 +113,15 @@ func (ts *Tablespace) addFile(file *File) error {
 	}
 	ts.File = append(ts.File, file)
 	return nil
+}
+
+func (ts *Tablespace) getFile(fid FID) (*File, error) {
+	for _, file := range ts.File {
+		if file.FID == fid {
+			return file, nil
+		}
+	}
+	return nil, NoKeyError
 }
 
 func (ts *Tablespace) NewPage() (*Page, error) {

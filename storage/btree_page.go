@@ -30,6 +30,7 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 		endian.PutUint32(header[i:], node.Parent.page.pagenum)
 		i += 4
 	} else {
+		header[i] = 0xFF // No Parent Page Pointer
 		i += 5
 	}
 
@@ -94,8 +95,8 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 		// Rids
 	} else {
 		// Pointers: Child Page Pointers
-		for i, ptr := range node.Pointers {
-			fmt.Printf("Ptr[%d]: FID=%v pagenum=%v\n", i, ptr.page.file.FID, ptr.page.pagenum)
+		for _, ptr := range node.Pointers {
+			//fmt.Printf("Ptr[%d]: FID=%v pagenum=%v\n", i, ptr.page.file.FID, ptr.page.pagenum)
 			page[index] = byte(ptr.page.file.FID)
 			endian.PutUint32(page[index+1:], ptr.page.pagenum)
 			index += 1 + 4
@@ -107,10 +108,10 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 }
 
 func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
-	node := &BtreeNode{}
+	node := &BtreeNode{Tablespace: btree.tablespace}
 	data := []byte(*pd)
 	index := 0
-	fmt.Printf("data=%v\n", data)
+	//fmt.Printf("data=%v\n", data)
 
 	// Header: Page Type
 	pageType := PageType(data[index])
@@ -123,12 +124,16 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	// Header: Page Pointer
 	page := &Page{}
 	node.Page = page
-	file := &File{}
-	node.Page.file = file
+
 	// Header: Parent Page Pointer
-	node.Page.file.FID = FID(uint8(data[index]))
-	//fmt.Printf("node.Page.file.FID=%v\n", node.Page.file.FID)
-	//TODO: FID ->file.path
+	//fmt.Printf("Tablespace=%v(%v)\n", btree.tablespace.Name, btree.tablespace.File)
+	fid := FID(data[index])
+	file, err := btree.tablespace.getFile(fid)
+	if err != nil {
+		return nil, errors.New("No FID in Tablespace")
+	}
+	node.Page.file = file
+
 	index += 1
 	node.Page.pagenum = endian.Uint32(data[index:])
 	//fmt.Printf("data[0:]=%v\n", data[0:])
@@ -136,16 +141,24 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	index += 4
 
 	// Header: Parent Page Pointer
-	parent := &Page{}
-	node.Parent.page = parent
-	file = &File{}
-	node.Parent.page.file = file
-	// Header: Parent Page Pointer
-	node.Parent.page.file.FID = FID(uint8(data[index]))
-	//TODO: FID ->file.path
-	index += 1
-	node.Parent.page.pagenum = endian.Uint32(data[index:])
-	index += 4
+	if data[index] == 0xFF {
+		// No Parent Pointer
+		index += 5
+	} else {
+		parent := &Page{}
+		node.Parent.page = parent
+		file = &File{}
+		node.Parent.page.file = file
+		fid := FID(data[index])
+		file, err := btree.tablespace.getFile(fid)
+		if err != nil {
+			return nil, errors.New("No Parent FID in Tablespace")
+		}
+		node.Parent.page.file = file
+		index += 1
+		node.Parent.page.pagenum = endian.Uint32(data[index:])
+		index += 4
+	}
 
 	// Header: Leaf
 	leaf_cap := endian.Uint16(data[index : index+2])
@@ -175,7 +188,14 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 		nextPage := &Page{}
 		node.NextLeaf.page = nextPage
 
-		node.NextLeaf.page.file.FID = FID(uint8(data[index]))
+		//node.NextLeaf.page.file.FID = FID(uint8(data[index]))
+		fid = FID(data[index])
+		file, err = btree.tablespace.getFile(fid)
+		if err != nil {
+			return nil, errors.New("No FID in Tablespace")
+		}
+		//fmt.Printf("nextLeaf.page.file=%v\n", file)
+		node.NextLeaf.page.file = file
 		index += 1
 		node.NextLeaf.page.pagenum = endian.Uint32(data[index:])
 		index += 4
@@ -204,12 +224,20 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 			ptrs[i].page = &p
 			node.Pointers[i] = ptrs[i]
 			p.file = &File{}
-			p.file.FID = FID(data[index])
+			//p.file.FID = FID(data[index])
+			fid = FID(data[index])
+			file, err = btree.tablespace.getFile(fid)
+			if err != nil {
+				return nil, errors.New("No FID in Tablespace")
+			}
+			//fmt.Printf("nextLeaf.page.file=%v\n", file)
+			p.file = file
 			p.pagenum = endian.Uint32(data[index+1:])
 			index += 1 + 4
 			//fmt.Printf("FID:%v pagenum:%v\n", p.file.FID, p.pagenum)
 		}
 	}
+	node.Updated = false
 
 	return node, nil
 }

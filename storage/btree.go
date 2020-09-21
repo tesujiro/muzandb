@@ -46,9 +46,27 @@ type BtreeNode struct {
 	//maxPointers  int
 }
 
+func (node BtreeNode) String() string {
+	s := fmt.Sprintf("\nTablespace:\t%v\n", node.Tablespace)
+	s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
+	s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
+	s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
+	s = fmt.Sprintf("%vCapacity:\t%v\n", s, node.Capacity)
+	s = fmt.Sprintf("%vNextLeaf:\t%v\n", s, node.NextLeaf)
+	s = fmt.Sprintf("%vKeys:\t%s\n", s, node.Keys)
+	s = fmt.Sprintf("%vRids:\t%v\n", s, node.Rids)
+	s = fmt.Sprintf("%vPointers:\t%v\n", s, node.Pointers)
+	s = fmt.Sprintf("%vUpaated:\t%v\n", s, node.Updated)
+	return s
+}
+
 type BtreeNodePtr struct {
 	page *Page
 	node *BtreeNode
+}
+
+func (ptr BtreeNodePtr) String() string {
+	return fmt.Sprintf("%v", ptr.page)
 }
 
 func (ptr *BtreeNodePtr) GetNode() (*BtreeNode, error) {
