@@ -580,3 +580,25 @@ func (bt *Btree) checkLeafKeyOrder() bool {
 	}
 	return true
 }
+
+func (bt *Btree) walk() []*BtreeNode {
+	return bt.root.walk()
+}
+
+func (node *BtreeNode) walk() []*BtreeNode {
+	var nodes []*BtreeNode
+	nodes = append(nodes, node)
+	for _, ptr := range node.Pointers {
+		/*
+			if ptr == nil {
+				continue
+			}
+		*/
+		child, err := ptr.GetNode()
+		if err != nil {
+		}
+		nodes = append(nodes, child.walk()...)
+	}
+
+	return nodes
+}

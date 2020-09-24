@@ -117,20 +117,5 @@ func TestBtree(t *testing.T) {
 		}
 		_ = r
 		//fmt.Printf("Find(%s):%v %v\n", key, b, r)
-
-		//data := btree.ToPageDataHeader(btree.root)
-		//fmt.Printf("HEADER: %v\n", data)
-		data, err := btree.ToPageData(btree.root)
-		if err != nil {
-			t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
-		}
-		//fmt.Printf("PageData: %v\n", data)
-
-		node, err := btree.ToNode(data)
-		if err != nil {
-			t.Errorf("Testcase[%v]: ToNode err: %v", testNumber, err)
-		}
-		fmt.Printf("Origin Node: %v\n", btree.root)
-		fmt.Printf("Loaded Node: %v\n", node)
 	}
 }
