@@ -47,16 +47,24 @@ type BtreeNode struct {
 }
 
 func (node BtreeNode) String() string {
-	s := fmt.Sprintf("\nTablespace:\t%v\n", node.Tablespace)
-	s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
-	s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
-	s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
-	s = fmt.Sprintf("%vCapacity:\t%v\n", s, node.Capacity)
-	s = fmt.Sprintf("%vNextLeaf:\t%v\n", s, node.NextLeaf)
+	var s string
+	s = fmt.Sprintf("\n")
+	/*
+		s = fmt.Sprintf("%vTablespace:\t%v\n", s,node.Tablespace)
+		s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
+		s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
+		s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
+		s = fmt.Sprintf("%vCapacity:\t%v\n", s, node.Capacity)
+	*/
+	//s = fmt.Sprintf("%vNextLeaf:\t%v\n", s, node.NextLeaf)
 	s = fmt.Sprintf("%vKeys:\t%s\n", s, node.Keys)
-	s = fmt.Sprintf("%vRids:\t%v\n", s, node.Rids)
-	s = fmt.Sprintf("%vPointers:\t%v\n", s, node.Pointers)
-	s = fmt.Sprintf("%vUpaated:\t%v\n", s, node.Updated)
+	s = fmt.Sprintf("%vKeys:\t%v\n", s, node.Keys)
+	//s = fmt.Sprintf("%vRids:\t%v\n", s, node.Rids)
+	//s = fmt.Sprintf("%vPointers:\t%v\n", s, node.Pointers)
+
+	/*
+		s = fmt.Sprintf("%vUpdated:\t%v\n", s, node.Updated)
+	*/
 	return s
 }
 
@@ -160,6 +168,7 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 		bt.root = node
 		return nil
 	}
+	//fmt.Printf("key=%v\n", key)
 	err := bt.root.insert(key, rid)
 	if err != nil {
 		fmt.Printf("insert failed:%v\n", err)
@@ -225,6 +234,7 @@ func (node *BtreeNode) insert(key []byte, rid rid) error {
 			}
 			return nil
 		case result == 0:
+			//fmt.Printf("Key=%v\tk=%v\n", key, k)
 			return DuplicateKeyError
 		}
 	}
@@ -588,7 +598,12 @@ func (bt *Btree) walk() []*BtreeNode {
 func (node *BtreeNode) walk() []*BtreeNode {
 	var nodes []*BtreeNode
 	nodes = append(nodes, node)
-	for _, ptr := range node.Pointers {
+	if len(node.Pointers) <= 1 {
+		return nodes
+	}
+	//if node.Pointers[0] != nil {
+	//}
+	for _, ptr := range node.Pointers[1:] {
 		/*
 			if ptr == nil {
 				continue

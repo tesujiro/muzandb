@@ -75,7 +75,7 @@ type pageHeader struct {
 	freeSpacePointer uint16
 }
 
-const pageHeaderBytes = 18
+const pageHeaderBytes = 20
 
 type record []byte
 

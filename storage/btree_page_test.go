@@ -6,24 +6,13 @@ import (
 	"testing"
 )
 
-type dataOrder uint8
-
-const (
-	ascendOrder dataOrder = iota
-	descendOrder
-	randomOrder
-)
-
-func TestBtree(t *testing.T) {
-
-	//debug.On()
-
+func TestBtreePage(t *testing.T) {
 	pm := startPageManager()
 
-	indexfile1 := pm.NewFile("./data/indexfile1.dbf", 1024*1024)
-	indexfile2 := pm.NewFile("./data/indexfile2.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/datafile1.dbf", 1024*1024)
-	datafile2 := pm.NewFile("./data/datafile2.dbf", 1024*1024)
+	indexfile1 := pm.NewFile("./data/indexfile1_TestBtreePage.dbf", 1024*1024)
+	indexfile2 := pm.NewFile("./data/indexfile2_TestBtreePage.dbf", 1024*1024)
+	datafile1 := pm.NewFile("./data/datafile1_TestBtreePage.dbf", 1024*1024)
+	datafile2 := pm.NewFile("./data/datafile2_TestBtreePage.dbf", 1024*1024)
 
 	ts1, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
@@ -51,7 +40,6 @@ func TestBtree(t *testing.T) {
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
 	}
-	//fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	/*
 		err = pm.Save()
@@ -72,9 +60,6 @@ func TestBtree(t *testing.T) {
 		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
-		{order: ascendOrder, elements: 10000, keylen: 16, valuelen: 16},
-		{order: descendOrder, elements: 10000, keylen: 16, valuelen: 16},
-		{order: randomOrder, elements: 10000, keylen: 16, valuelen: 16},
 	}
 
 	for testNumber, test := range tests {
@@ -101,9 +86,12 @@ func TestBtree(t *testing.T) {
 			rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
 		}
 
+		//TODO:
 		rid := newRid(datafile1, 0, 0)
 		for i, key := range keys {
-			err = btree.Insert([]byte(key), rid)
+			err = btree.Insert(key, rid)
+			//fmt.Printf("Insert key = %v\n", key)
+
 			if err != nil {
 				t.Errorf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
 			}
@@ -120,5 +108,27 @@ func TestBtree(t *testing.T) {
 		}
 		_ = r
 		//fmt.Printf("Find(%s):%v %v\n", key, b, r)
+
+		for _, original := range btree.walk() {
+			//data := btree.ToPageDataHeader(btree.root)
+			//fmt.Printf("HEADER: %v\n", data)
+			data, err := btree.ToPageData(original)
+			if err != nil {
+				t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
+			}
+			//fmt.Printf("PageData: %v\n", data)
+
+			restored, err := btree.ToNode(data)
+			if err != nil {
+				t.Errorf("Testcase[%v]: ToNode err: %v", testNumber, err)
+			}
+			restored.Updated = original.Updated
+			if restored.String() != original.String() {
+				fmt.Printf("Original Node: %v\n", original)
+				fmt.Printf("Restored Node: %v\n", restored)
+			}
+
+		}
 	}
+
 }
