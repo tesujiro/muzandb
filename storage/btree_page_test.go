@@ -124,8 +124,9 @@ func TestBtreePage(t *testing.T) {
 			}
 			restored.Updated = original.Updated
 			if restored.String() != original.String() {
-				fmt.Printf("Original Node: %v\n", original)
-				fmt.Printf("Restored Node: %v\n", restored)
+				t.Errorf("Testcase[%v]: Restored node != Original node", testNumber)
+				t.Errorf("Original Node: %v\n", original)
+				t.Errorf("Restored Node: %v\n", restored)
 			}
 
 		}

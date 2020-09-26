@@ -56,7 +56,9 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 
 	// Header: NextLeafNode
 	if node.Leaf {
-		if node.NextLeaf.page != nil {
+		if node.NextLeaf.page == nil {
+			header[i] = 0xFF
+		} else {
 			header[i] = byte(node.NextLeaf.page.file.FID)
 			endian.PutUint32(header[i+1:], node.NextLeaf.page.pagenum)
 		}
@@ -96,7 +98,9 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	} else {
 		// Pointers: Child Page Pointers
 		for _, ptr := range node.Pointers {
-			if ptr.page != nil {
+			if ptr.page == nil {
+				page[index] = 0xFF
+			} else {
 				//fmt.Printf("Ptr[%d]: FID=%v pagenum=%v\n", i, ptr.page.file.FID, ptr.page.pagenum)
 				page[index] = byte(ptr.page.file.FID)
 				endian.PutUint32(page[index+1:], ptr.page.pagenum)
