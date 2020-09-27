@@ -12,16 +12,21 @@ const PageSize = 1024
 const dataPath = "./data"
 const pageMangerMetaPath = dataPath + "/page_manager.gob"
 
+type FID uint8
+
+var FileMap map[FID]*File = make(map[FID]*File)
+
 type PageManager struct {
 	Tablespaces []*Tablespace
 	LastFID     FID
+	//FileMap     map[FID]*File
 	//Files       map[FID]*File
 }
 
-type FID uint8
-
 func (pm *PageManager) NewFile(path string, size uint32) *File {
+	fid := pm.LastFID
 	file := newFile(pm.LastFID, path, size)
+	FileMap[fid] = file
 	pm.LastFID++
 	return file
 }
@@ -30,7 +35,9 @@ func startPageManager() *PageManager {
 	fp, err := os.Open(pageMangerMetaPath)
 	if err != nil {
 		fmt.Println("Create New PageManager")
-		return &PageManager{}
+		return &PageManager{
+			//FileMap: make(map[FID]*File),
+		}
 	}
 	defer fp.Close()
 
@@ -116,12 +123,20 @@ func (ts *Tablespace) addFile(file *File) error {
 }
 
 func (ts *Tablespace) getFile(fid FID) (*File, error) {
-	for _, file := range ts.File {
-		if file.FID == fid {
-			return file, nil
+	/*
+		for _, file := range ts.File {
+			if file.FID == fid {
+				return file, nil
+			}
 		}
+	*/
+	file := FileMap[fid]
+	if file == nil {
+		fmt.Printf("FID(%v) not found.\n", fid)
+		return nil, NoKeyError
 	}
-	return nil, NoKeyError
+	return file, nil
+
 }
 
 func (ts *Tablespace) NewPage() (*Page, error) {

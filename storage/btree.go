@@ -49,21 +49,16 @@ type BtreeNode struct {
 func (node BtreeNode) String() string {
 	var s string
 	s = fmt.Sprintf("\n")
-	/*
-			s = fmt.Sprintf("%vTablespace:\t%v\n", s, node.Tablespace)
-			s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
-			s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
-			s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
-			s = fmt.Sprintf("%vCapacity:\t%v\n", s, node.Capacity)
-		s = fmt.Sprintf("%vNextLeaf:\t%v\n", s, node.NextLeaf)
-	*/
+	s = fmt.Sprintf("%vTablespace:\t%v\n", s, node.Tablespace)
+	s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
+	s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
+	s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
+	s = fmt.Sprintf("%vCapacity:\t%v\n", s, node.Capacity)
+	s = fmt.Sprintf("%vNextLeaf:\t%v\n", s, node.NextLeaf)
 	s = fmt.Sprintf("%vKeys:\t%s\n", s, node.Keys)
-	//TODO:
 	s = fmt.Sprintf("%vRids:\t%v\n", s, node.Rids)
-	/*
-		s = fmt.Sprintf("%vPointers:\t%v\n", s, node.Pointers)
-		s = fmt.Sprintf("%vUpdated:\t%v\n", s, node.Updated)
-	*/
+	s = fmt.Sprintf("%vPointers:\t%v\n", s, node.Pointers)
+	s = fmt.Sprintf("%vUpdated:\t%v\n", s, node.Updated)
 	return s
 }
 

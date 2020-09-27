@@ -212,20 +212,18 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 
 	// Rid, Pointers
 	if node.Leaf {
-		fmt.Printf("number of keys=%v\n", numberOfKeys)
 		// Rids
-		//index += 1 + 4 + 2
 		node.Rids = make([]rid, numberOfKeys)
 		for i := 0; i < numberOfKeys; i++ {
-			fid := FID(data[i])
-			//fmt.Printf("FID=%v\n", fid)
+			fid := FID(data[index])
 			file, err := btree.tablespace.getFile(fid)
 			if err != nil {
 				return nil, err
 			}
+			//fmt.Printf("getFile(%v)=%v\n", fid, *file)
 			node.Rids[i].file = file
-			node.Rids[i].pagenum = endian.Uint32(data[i+1:])
-			node.Rids[i].slotnum = endian.Uint16(data[i+5:])
+			node.Rids[i].pagenum = endian.Uint32(data[index+1:])
+			node.Rids[i].slotnum = endian.Uint16(data[index+5:])
 			index += 1 + 4 + 2
 		}
 
