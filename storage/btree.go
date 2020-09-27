@@ -370,10 +370,13 @@ func (node *BtreeNode) split() error {
 	node.Keys = newKeys
 	right.Leaf = node.Leaf
 	if node.Leaf {
+		// Rids
 		newRids := make([]rid, len(node.Rids[center:]))
 		copy(newRids, node.Rids[center:])
 		right.Rids = newRids
-		//TODO: change node.Rids
+		node.Rids = node.Rids[:center]
+
+		// NextLeaf
 		nextnode, err := node.NextLeaf.GetNode()
 		if err != nil {
 			return err

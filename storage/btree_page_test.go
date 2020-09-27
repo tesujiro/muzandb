@@ -73,15 +73,19 @@ func TestBtreePage(t *testing.T) {
 		}
 
 		keys := make([][]byte, test.elements)
+		rids := make([]rid, test.elements)
 		for i := range keys {
 			key := make([]byte, test.keylen)
 			switch test.order {
 			case ascendOrder:
 				copy(key, fmt.Sprintf("key%5.5v", i))
+				rids[i] = newRid(datafile1, uint32(i), uint16(i))
 			case descendOrder:
 				copy(key, fmt.Sprintf("key%5.5v", len(keys)-1-i))
+				rids[i] = newRid(datafile1, uint32(len(keys)-1-i), uint16(len(keys)-1-i))
 			case randomOrder:
 				copy(key, fmt.Sprintf("key%5.5v", i))
+				rids[i] = newRid(datafile1, uint32(i), uint16(i))
 			}
 			keys[i] = key
 		}
@@ -90,9 +94,9 @@ func TestBtreePage(t *testing.T) {
 		}
 
 		//TODO:
-		rid := newRid(datafile1, 0, 0)
 		for i, key := range keys {
-			err = btree.Insert(key, rid)
+			//rid := newRid(datafile1, uint32(i), uint16(i))
+			err = btree.Insert(key, rids[i])
 			//fmt.Printf("Insert key = %v\n", key)
 
 			if err != nil {
