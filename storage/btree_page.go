@@ -95,6 +95,12 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	// Rid, Pointers
 	if node.Leaf {
 		// Rids
+		for _, rid := range node.Rids {
+			page[index] = byte(rid.file.FID)
+			endian.PutUint32(page[index+1:], rid.pagenum)
+			endian.PutUint16(page[index+5:], rid.slotnum)
+			index += 1 + 4 + 2
+		}
 	} else {
 		// Pointers: Child Page Pointers
 		for _, ptr := range node.Pointers {
@@ -178,7 +184,7 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	index += 2
 	//fmt.Printf("node.Capacity = %v\n", node.Capacity)
 
-	// Header: Capacity
+	// Header: Number Of Keys
 	numberOfKeys := int(endian.Uint16(data[index : index+2]))
 	index += 2
 	_ = numberOfKeys
@@ -206,7 +212,23 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 
 	// Rid, Pointers
 	if node.Leaf {
+		fmt.Printf("number of keys=%v\n", numberOfKeys)
 		// Rids
+		//index += 1 + 4 + 2
+		node.Rids = make([]rid, numberOfKeys)
+		for i := 0; i < numberOfKeys; i++ {
+			fid := FID(data[i])
+			//fmt.Printf("FID=%v\n", fid)
+			file, err := btree.tablespace.getFile(fid)
+			if err != nil {
+				return nil, err
+			}
+			node.Rids[i].file = file
+			node.Rids[i].pagenum = endian.Uint32(data[i+1:])
+			node.Rids[i].slotnum = endian.Uint16(data[i+5:])
+			index += 1 + 4 + 2
+		}
+
 	} else {
 		// Pointers: Child Page Pointers
 		ptrs := make([]BtreeNodePtr, numberOfKeys+1)

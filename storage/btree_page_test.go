@@ -61,6 +61,9 @@ func TestBtreePage(t *testing.T) {
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
 	}
+	//fmt.Printf("ts1=%v\n", ts1)
+	//fmt.Printf("ts2=%v\n", ts2)
+	fmt.Printf("datafile1=%v\n", datafile1)
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
@@ -127,9 +130,8 @@ func TestBtreePage(t *testing.T) {
 				t.Errorf("Testcase[%v]: Restored node != Original node", testNumber)
 				t.Errorf("Original Node: %v\n", original)
 				t.Errorf("Restored Node: %v\n", restored)
+				t.Errorf("data: %v\n", data)
 			}
-
 		}
 	}
-
 }
