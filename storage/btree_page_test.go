@@ -14,29 +14,29 @@ func TestBtreePage(t *testing.T) {
 	datafile1 := pm.NewFile("./data/datafile1_TestBtreePage.dbf", 1024*1024)
 	datafile2 := pm.NewFile("./data/datafile2_TestBtreePage.dbf", 1024*1024)
 
-	ts1, err := pm.NewTablespace("INDEXSPACE1")
+	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
 		t.Fatalf("PageManger.newTablespace() error:%v", err)
 	}
 
-	ts2, err := pm.NewTablespace("DATASPACE1")
+	ts_dat, err := pm.NewTablespace("DATASPACE1")
 	if err != nil {
 		t.Fatalf("PageManger.newTablespace() error:%v", err)
 	}
 
-	err = ts1.addFile(indexfile1)
+	err = ts_idx.addFile(indexfile1)
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
 	}
-	err = ts1.addFile(indexfile2)
+	err = ts_idx.addFile(indexfile2)
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile2, err)
 	}
-	err = ts2.addFile(datafile1)
+	err = ts_dat.addFile(datafile1)
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
 	}
-	err = ts2.addFile(datafile2)
+	err = ts_dat.addFile(datafile2)
 	if err != nil {
 		t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
 	}
@@ -61,13 +61,13 @@ func TestBtreePage(t *testing.T) {
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
 	}
-	//fmt.Printf("ts1=%v\n", ts1)
-	//fmt.Printf("ts2=%v\n", ts2)
+	//fmt.Printf("ts_idx=%v\n", ts_idx)
+	//fmt.Printf("ts_dat=%v\n", ts_dat)
 	fmt.Printf("datafile1=%v\n", datafile1)
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		btree, err := NewBtree(ts1, test.keylen, test.valuelen)
+		btree, err := NewBtree(ts_idx, test.keylen, test.valuelen)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}
@@ -135,6 +135,7 @@ func TestBtreePage(t *testing.T) {
 				t.Errorf("Original Node: %v\n", original)
 				t.Errorf("Restored Node: %v\n", restored)
 				t.Errorf("data: %v\n", data)
+				//t.Errorf("data:\n%s", hex.Dump([]byte(*data)))
 			}
 		}
 	}
