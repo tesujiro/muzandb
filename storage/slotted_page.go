@@ -62,6 +62,19 @@ func (sp *SlottedPage) Insert(data []byte) (*rid, error) {
 	return &rid, nil
 }
 
+func (sp *SlottedPage) Select(rid *rid) (*[]byte, error) {
+	if rid.file.FID != sp.page.file.FID {
+		return nil, fmt.Errorf("rid.file.FID(%v) is not sp.file.FID(%v).", rid.file.FID, sp.page.file.FID)
+	}
+	if rid.pagenum != sp.page.pagenum {
+		return nil, fmt.Errorf("rid.pagenum(%v) is not sp.page.pagenum(%v).", rid.pagenum, sp.page.pagenum)
+	}
+	if rid.slotnum > uint16(sp.slots) {
+		return nil, fmt.Errorf("rid.pagenum(%v) is not sp.page.pagenum(%v).", rid.pagenum, sp.page.pagenum)
+	}
+	return &sp.data[rid.slotnum], nil
+}
+
 func (sp *SlottedPage) ToPageData() (*PageData, error) {
 	// TODO: SAME AS ToPageDataHeader IN btree_page.go
 	bytes := make([]byte, PageSize)

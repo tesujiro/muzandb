@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -37,21 +38,36 @@ func TestSlottedPage(t *testing.T) {
 			t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
 		}
 
-		for _, data := range test.data {
+		// Test Insert
+		rids := make([]*rid, len(test.data))
+		for i, data := range test.data {
 			rid, err := sp.Insert([]byte(data))
 			if err != test.err {
-				t.Errorf("Testcase[%v]: SlottedPage.InsertData(%s) error:%v", testNumber, data, err)
+				t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, data, err)
 			}
 			//t.Logf("rid:%v", rid)
-			_ = rid
+			rids[i] = rid
 		}
+
 		if test.err == nil {
+			// Test Select
+			for i, rid := range rids {
+				selected_data, err := sp.Select(rid)
+				if err != nil {
+					t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error:%v", testNumber, rid, err)
+				}
+				if bytes.Compare(*selected_data, []byte(test.data[i])) != 0 {
+				}
+			}
+
+			// Test ToPageData
 			original := sp
 			pd, err := original.ToPageData()
 			if err != nil {
 				t.Errorf("Testcase[%v]: SlottedPage.ToPageData() error:%v", testNumber, err)
 			}
 
+			// Test ToSlottedPage
 			restored, err := pd.ToSlottedPage(original.pctfree)
 			if err != nil {
 				t.Errorf("Testcase[%v]: PageData.ToSlottedPage() error:%v", testNumber, err)
