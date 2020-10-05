@@ -31,15 +31,16 @@ func TestSlottedPage(t *testing.T) {
 	}
 
 	for testNumber, test := range tc {
+		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
 		sp, err := newSlottedPage(ts_dat)
 		if err != nil {
-			t.Errorf("newSlottedPage() error:%v", err)
+			t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
 		}
 
 		for _, data := range test.data {
 			rid, err := sp.Insert([]byte(data))
 			if err != test.err {
-				t.Errorf("SlottedPage.InsertData(%s) error:%v", data, err)
+				t.Errorf("Testcase[%v]: SlottedPage.InsertData(%s) error:%v", testNumber, data, err)
 			}
 			//t.Logf("rid:%v", rid)
 			_ = rid
@@ -48,12 +49,12 @@ func TestSlottedPage(t *testing.T) {
 			original := sp
 			pd, err := original.ToPageData()
 			if err != nil {
-				t.Errorf("SlottedPage.ToPageData() error:%v", err)
+				t.Errorf("Testcase[%v]: SlottedPage.ToPageData() error:%v", testNumber, err)
 			}
 
 			restored, err := pd.ToSlottedPage(original.pctfree)
 			if err != nil {
-				t.Errorf("PageData.ToSlottedPage() error:%v", err)
+				t.Errorf("Testcase[%v]: PageData.ToSlottedPage() error:%v", testNumber, err)
 			}
 			if restored.String() != original.String() {
 				t.Errorf("Testcase[%v]: Restored node != Original node", testNumber)
