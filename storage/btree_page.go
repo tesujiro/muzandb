@@ -11,9 +11,9 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 
 	// Header: Page Type
 	if node.Leaf {
-		header[i] = byte(BtreeLeafPage)
+		header[i] = byte(BtreeLeafPageType)
 	} else {
-		header[i] = byte(BtreeNonLeafPage)
+		header[i] = byte(BtreeNonLeafPageType)
 	}
 	i += 1
 
@@ -129,7 +129,7 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	// Header: Page Type
 	pageType := PageType(data[index])
 	index += 1
-	if pageType != BtreeLeafPage && pageType != BtreeNonLeafPage {
+	if pageType != BtreeLeafPageType && pageType != BtreeNonLeafPageType {
 		return nil, errors.New("Not a BtreeNode data")
 	}
 	//fmt.Printf("pageType=%T\n", pageType)
@@ -171,10 +171,10 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 	leaf_cap := endian.Uint16(data[index : index+2])
 	leaf := (leaf_cap >> 15) == 1
 	switch {
-	case leaf && pageType == BtreeNonLeafPage:
+	case leaf && pageType == BtreeNonLeafPageType:
 		return nil, errors.New("BtreeNonLeafPage but leaf==true")
-	case !leaf && pageType == BtreeLeafPage:
-		return nil, errors.New("BtreeLeafPage but leaf==false")
+	case !leaf && pageType == BtreeLeafPageType:
+		return nil, errors.New("BtreeLeafPageType but leaf==false")
 	default:
 		node.Leaf = leaf
 	}

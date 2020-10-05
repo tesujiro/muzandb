@@ -10,8 +10,9 @@ var endian binary.ByteOrder = binary.BigEndian
 type PageType uint8
 
 const (
-	BtreeLeafPage PageType = iota
-	BtreeNonLeafPage
+	BtreeLeafPageType PageType = iota
+	BtreeNonLeafPageType
+	SlottedPageType
 )
 
 type PageData []byte
@@ -85,7 +86,7 @@ type slot struct {
 	length   uint16
 }
 
-const slotBytes = 4
+const slotBytes = 6
 
 type rid struct {
 	file    *File

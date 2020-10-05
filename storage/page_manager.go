@@ -31,6 +31,15 @@ func (pm *PageManager) NewFile(path string, size uint32) *File {
 	return file
 }
 
+func GetFile(fid FID) (*File, error) {
+	file := FileMap[fid]
+	if file == nil {
+		fmt.Printf("FID(%v) not found.\n", fid)
+		return nil, NoKeyError
+	}
+	return file, nil
+}
+
 func startPageManager() *PageManager {
 	fp, err := os.Open(pageMangerMetaPath)
 	if err != nil {
@@ -122,21 +131,9 @@ func (ts *Tablespace) addFile(file *File) error {
 	return nil
 }
 
+// TODO: Tablespace.getFile -> GetFile
 func (ts *Tablespace) getFile(fid FID) (*File, error) {
-	/*
-		for _, file := range ts.File {
-			if file.FID == fid {
-				return file, nil
-			}
-		}
-	*/
-	file := FileMap[fid]
-	if file == nil {
-		fmt.Printf("FID(%v) not found.\n", fid)
-		return nil, NoKeyError
-	}
-	return file, nil
-
+	return GetFile(fid)
 }
 
 func (ts *Tablespace) NewPage() (*Page, error) {

@@ -1,6 +1,7 @@
 test:
 	- rm ./data/*.gob ./data/*.dbf
 	#go test -v .
+	go test -v -run TestSlottedPage
 	go test -v -run TestBtree
 
 cover:
