@@ -39,7 +39,7 @@ func newSlottedPage(ts *Tablespace) (*SlottedPage, error) {
 		//tablespace:   ts,
 		page:         page,
 		freeSpacePtr: PageSize,
-		pctfree:      0.8,
+		pctfree:      0.2,
 	}, nil
 }
 
@@ -47,6 +47,10 @@ func (sp *SlottedPage) Insert(data []byte) (*rid, error) {
 	// check size
 	freeBytes := sp.freeSpacePtr - slotBytes*sp.slots - slottedPageHeaderBytes
 	if freeBytes-len(data)-slotBytes < int(PageSize*sp.pctfree) {
+		//fmt.Printf("freeBytes:%v\n", freeBytes)
+		//fmt.Printf("len(data):%v\n", len(data))
+		//fmt.Printf("slotBytes:%v\n", slotBytes)
+		//fmt.Printf("%v < PageSize:%v * sp.pctfree:%v\n", freeBytes-len(data)-slotBytes, PageSize, sp.pctfree)
 		return nil, NoSpaceError
 	}
 
@@ -63,6 +67,7 @@ func (sp *SlottedPage) Insert(data []byte) (*rid, error) {
 }
 
 func (sp *SlottedPage) Select(rid *rid) (*[]byte, error) {
+	//fmt.Printf("in Select rid=%v\n", rid)
 	if rid.file.FID != sp.page.file.FID {
 		return nil, fmt.Errorf("rid.file.FID(%v) is not sp.file.FID(%v).", rid.file.FID, sp.page.file.FID)
 	}

@@ -57,6 +57,7 @@ func TestSlottedPage(t *testing.T) {
 					t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error:%v", testNumber, rid, err)
 				}
 				if bytes.Compare(*selected_data, []byte(test.data[i])) != 0 {
+					t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error: original %s -> selected %s", testNumber, rid, test.data[i], selected_data)
 				}
 			}
 

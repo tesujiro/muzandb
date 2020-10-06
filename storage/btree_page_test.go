@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 )
 
@@ -60,6 +61,7 @@ func TestBtreePage(t *testing.T) {
 		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
+		{order: randomOrder, elements: 10, keylen: 16, valuelen: 16},
 	}
 	//fmt.Printf("ts_idx=%v\n", ts_idx)
 	//fmt.Printf("ts_dat=%v\n", ts_dat)
@@ -71,33 +73,62 @@ func TestBtreePage(t *testing.T) {
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}
+		sp, err := newSlottedPage(ts_dat)
+		if err != nil {
+			t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
+		}
 
 		keys := make([][]byte, test.elements)
+		values := make([][]byte, test.elements)
 		rids := make([]rid, test.elements)
 		for i := range keys {
 			key := make([]byte, test.keylen)
 			switch test.order {
 			case ascendOrder:
 				copy(key, fmt.Sprintf("key%5.5v", i))
-				rids[i] = newRid(datafile1, uint32(i), uint16(i))
 			case descendOrder:
 				copy(key, fmt.Sprintf("key%5.5v", len(keys)-1-i))
-				rids[i] = newRid(datafile1, uint32(len(keys)-1-i), uint16(len(keys)-1-i))
 			case randomOrder:
 				copy(key, fmt.Sprintf("key%5.5v", i))
-				rids[i] = newRid(datafile1, uint32(i), uint16(i))
 			}
+
 			keys[i] = key
+
+			value := strings.Replace(string(key), "key", "value", 1)
+			values[i] = []byte(value)
+			//fmt.Printf("keys[%v]=%s values[%v]=%s\n", i, keys[i], i, values[i])
+
+			rid, err := sp.Insert([]byte(value))
+			if err != nil {
+				t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, value, err)
+				//fmt.Printf("%v", sp)
+				sp, err = newSlottedPage(ts_dat)
+				if err != nil {
+					t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
+				}
+				rid, err = sp.Insert([]byte(value))
+				if err != nil {
+					t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, value, err)
+				}
+			}
+			//t.Logf("rid:%v", rid)
+			rids[i] = *rid
 		}
 		if test.order == randomOrder {
-			rand.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
+			rand.Shuffle(len(keys), func(i, j int) {
+				keys[i], keys[j] = keys[j], keys[i]
+				values[i], values[j] = values[j], values[i]
+				rids[i], rids[j] = rids[j], rids[i]
+			})
+			//fmt.Printf("keys=%v\n", keys)
+			//fmt.Printf("values=%v\n", values)
 		}
 
 		//TODO:
 		for i, key := range keys {
 			//rid := newRid(datafile1, uint32(i), uint16(i))
 			err = btree.Insert(key, rids[i])
-			//fmt.Printf("Insert key = %v\n", key)
+			fmt.Printf("Insert keys[%v]=%s values[%v]=%s rids[i]=%v\n", i, keys[i], i, values[i], rids[i])
 
 			if err != nil {
 				t.Errorf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
@@ -108,13 +139,22 @@ func TestBtreePage(t *testing.T) {
 		}
 
 		key := make([]byte, test.keylen)
-		copy(key, fmt.Sprintf("key%5.5v", rand.Intn(test.elements)))
-		b, r := btree.Find(key)
-		if !b {
-			t.Errorf("Testcase[%v]: No key: %s in B-tree.", testNumber, key)
+		for i := 0; i < 5; i++ {
+			copy(key, fmt.Sprintf("key%5.5v", rand.Intn(test.elements)))
+			b, rid := btree.Find(key)
+			if !b {
+				t.Errorf("Testcase[%v]: No key: %s in B-tree.", testNumber, key)
+				continue
+			}
+			//fmt.Printf("Select(%v)\n", rid)
+			selected_data, err := sp.Select(rid)
+			if err != nil {
+				t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error:%v", testNumber, rid, err)
+				continue
+			}
+			//fmt.Printf("Find(%s):%v %v\n", key, b, r)
+			fmt.Printf("Find(%s):%s\trid=%v\n", key, *selected_data, *rid)
 		}
-		_ = r
-		//fmt.Printf("Find(%s):%v %v\n", key, b, r)
 
 		for _, original := range btree.walk() {
 			//data := btree.ToPageDataHeader(btree.root)

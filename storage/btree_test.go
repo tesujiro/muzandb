@@ -20,10 +20,10 @@ func TestBtree(t *testing.T) {
 
 	pm := startPageManager()
 
-	indexfile1 := pm.NewFile("./data/indexfile1.dbf", 1024*1024)
-	indexfile2 := pm.NewFile("./data/indexfile2.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/datafile1.dbf", 1024*1024)
-	datafile2 := pm.NewFile("./data/datafile2.dbf", 1024*1024)
+	indexfile1 := pm.NewFile("./data/TestBtree_indexfile1.dbf", 1024*1024)
+	indexfile2 := pm.NewFile("./data/TestBtree_indexfile2.dbf", 1024*1024)
+	datafile1 := pm.NewFile("./data/TestBtree_datafile1.dbf", 1024*1024)
+	datafile2 := pm.NewFile("./data/TestBtree_datafile2.dbf", 1024*1024)
 
 	ts1, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
