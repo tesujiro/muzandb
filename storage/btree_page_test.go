@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -55,13 +56,14 @@ func TestBtreePage(t *testing.T) {
 		keylen   uint8
 		valuelen uint8
 	}{
-		{order: ascendOrder, elements: 50, keylen: 200, valuelen: 200},
-		{order: descendOrder, elements: 50, keylen: 200, valuelen: 200},
-		{order: randomOrder, elements: 50, keylen: 200, valuelen: 200},
+		/*
+			{order: ascendOrder, elements: 50, keylen: 200, valuelen: 200},
+			{order: descendOrder, elements: 50, keylen: 200, valuelen: 200},
+			{order: randomOrder, elements: 50, keylen: 200, valuelen: 200},
+		*/
 		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
-		{order: randomOrder, elements: 10, keylen: 16, valuelen: 16},
 	}
 	//fmt.Printf("ts_idx=%v\n", ts_idx)
 	//fmt.Printf("ts_dat=%v\n", ts_dat)
@@ -128,7 +130,7 @@ func TestBtreePage(t *testing.T) {
 		for i, key := range keys {
 			//rid := newRid(datafile1, uint32(i), uint16(i))
 			err = btree.Insert(key, rids[i])
-			fmt.Printf("Insert keys[%v]=%s values[%v]=%s rids[i]=%v\n", i, keys[i], i, values[i], rids[i])
+			//fmt.Printf("Insert keys[%v]=%s values[%v]=%s rids[i]=%v\n", i, keys[i], i, values[i], rids[i])
 
 			if err != nil {
 				t.Errorf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
@@ -138,19 +140,20 @@ func TestBtreePage(t *testing.T) {
 			t.Errorf("Testcase[%v]: Leaf keys are not in ascend order.", testNumber)
 		}
 
-		key := make([]byte, test.keylen)
-		for i := 0; i < 5; i++ {
-			copy(key, fmt.Sprintf("key%5.5v", rand.Intn(test.elements)))
+		for i, key := range keys {
 			b, rid := btree.Find(key)
 			if !b {
 				t.Errorf("Testcase[%v]: No key: %s in B-tree.", testNumber, key)
 				continue
 			}
-			//fmt.Printf("Select(%v)\n", rid)
 			selected_data, err := sp.Select(rid)
 			if err != nil {
-				t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error:%v", testNumber, rid, err)
+				t.Errorf("Testcase[%v]: SlottedPage.Select(%s) error:%v", testNumber, key, err)
 				continue
+			}
+			if bytes.Compare(*selected_data, values[i]) != 0 {
+				t.Errorf("Testcase[%v]: btree.Find(%s) result %s != %s", testNumber, key, *selected_data, values[i])
+				//continue
 			}
 			//fmt.Printf("Find(%s):%v %v\n", key, b, r)
 			fmt.Printf("Find(%s):%s\trid=%v\n", key, *selected_data, *rid)

@@ -475,10 +475,11 @@ func (node *BtreeNode) find(key []byte) (bool, *rid) {
 	for i, k := range node.Keys {
 		switch result := bytes.Compare(key, k); {
 		case result == 0 && node.Leaf:
+			fmt.Printf("found key=%s Rid=%v\n", key, node.Rids[i])
 			return true, &node.Rids[i]
 		case result < 0 && node.Leaf:
 			return false, nil
-		case result <= 0:
+		case result < 0:
 			child, err := node.Pointers[i].GetNode()
 			if err != nil {
 				fmt.Println("GetNode() error")
