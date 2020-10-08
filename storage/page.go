@@ -30,46 +30,11 @@ type Page struct {
 	header pageHeader
 }
 
-/*
-type pagePointer struct {
-	file    *File
-	pagenum uint32
-}
-*/
-
 const pagePointerBytes = 5
 
 func (p *Page) String() string {
 	return fmt.Sprintf("Page:(file.path=%v, pagenum=%v)", p.file.Path, p.pagenum)
 }
-
-/*
-func (p *Page) Bytes() []byte {
-}
-*/
-
-/*
-type SlottedPage struct {
-	Page
-
-	//FixedSizedRecord bool
-	//data   []byte
-	header pageHeader
-}
-
-func NewSlottedPage(file *File, pagenum uint32) *SlottedPage {
-	return &SlottedPage{
-		Page: Page{
-			file:    file,
-			pagenum: pagenum,
-		},
-	}
-}
-
-func (sp *SlottedPage) Bytes() (*[]byte, error) {
-	return nil, nil
-}
-*/
 
 type pageHeader struct {
 	slots            uint16
@@ -126,15 +91,6 @@ func (p *Page) write() error {
 	//return p.file.write(p.pagenum, 0, p.data)
 	return nil
 }
-
-/*
-func (p *Page) readHeader() pageHeader {
-	header := p.data[len(p.data)-pageHeaderBytes:]
-	slots := endian.Uint16(header[:2])
-	fsp := endian.Uint16(header[2:])
-	return pageHeader{slots: slots, freeSpacePointer: fsp}
-}
-*/
 
 func (p *Page) setHeader(ph pageHeader) {
 	p.header.slots = ph.slots

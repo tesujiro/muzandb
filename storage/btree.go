@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tesujiro/muzan/debug"
+	"github.com/tesujiro/muzandb/debug"
 )
 
 // Btree represents "B+Tree"
@@ -479,7 +479,6 @@ func (node *BtreeNode) find(key []byte) (bool, *rid) {
 	for i, k := range node.Keys {
 		switch result := bytes.Compare(key, k); {
 		case result == 0 && node.Leaf:
-			//fmt.Printf("found key=%s Rid=%v\n", key, node.Rids[i])
 			return true, &node.Rids[i]
 		case result < 0 && node.Leaf:
 			return false, nil
@@ -534,7 +533,6 @@ func (bt *Btree) PrintLeaves() {
 	var err error
 	node := bt.root
 	for !node.Leaf {
-		//node = node.Pointers[0].node
 		node, err = node.Pointers[0].GetNode()
 		if err != nil {
 			fmt.Println("GetNode() error")

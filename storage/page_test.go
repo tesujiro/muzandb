@@ -1,10 +1,6 @@
 package storage
 
-import (
-	"fmt"
-	"testing"
-)
-
+/*j
 func TestPage(t *testing.T) {
 	f := newFile(1, dataPath+"/yyy.dbf", PageSize*10)
 	f.create()
@@ -58,3 +54,4 @@ func TestPage(t *testing.T) {
 	}
 
 }
+*/
