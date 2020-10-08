@@ -163,6 +163,7 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 		return nil
 	}
 	//fmt.Printf("key=%v\n", key)
+
 	err := bt.root.insert(key, rid)
 	if err != nil {
 		fmt.Printf("insert failed:%v\n", err)
@@ -319,7 +320,9 @@ func (node *BtreeNode) split() error {
 		if node.Leaf {
 			node.Leaf = false
 			left.Rids = node.Rids[:center]
-			right.Rids = node.Rids[center:]
+			//right.Rids = node.Rids[center:]
+			right.Rids = make([]rid, len(node.Rids[center:]))
+			copy(right.Rids, node.Rids[center:])
 			node.Rids = []rid{}
 			left.NextLeaf.SetNode(right)
 			left.NextLeaf.SetPage(right.Page)
@@ -419,6 +422,7 @@ func (node *BtreeNode) split() error {
 }
 
 func (node *BtreeNode) insertAt(key []byte, rid rid, index int) error {
+	debug.Printf("insertAt(key:%s,rid:%v,index:%v)\n", key, rid, index)
 	if index > len(node.Keys) {
 		return errors.New("index out of range.")
 	}
@@ -475,7 +479,7 @@ func (node *BtreeNode) find(key []byte) (bool, *rid) {
 	for i, k := range node.Keys {
 		switch result := bytes.Compare(key, k); {
 		case result == 0 && node.Leaf:
-			fmt.Printf("found key=%s Rid=%v\n", key, node.Rids[i])
+			//fmt.Printf("found key=%s Rid=%v\n", key, node.Rids[i])
 			return true, &node.Rids[i]
 		case result < 0 && node.Leaf:
 			return false, nil
@@ -569,7 +573,9 @@ func (bt *Btree) checkLeafKeyOrder() bool {
 	count := 0
 	var prev []byte
 	for i := 0; ; i++ {
+		//fmt.Printf("==\n")
 		for _, key := range node.Keys {
+			//fmt.Printf("key=%s rid=%v\n", key, node.Rids[i])
 			if bytes.Compare(key, prev) < 0 {
 				return false
 			}

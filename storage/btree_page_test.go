@@ -9,12 +9,13 @@ import (
 )
 
 func TestBtreePage(t *testing.T) {
+	//debug.On()
 	pm := startPageManager()
 
-	indexfile1 := pm.NewFile("./data/indexfile1_TestBtreePage.dbf", 1024*1024)
-	indexfile2 := pm.NewFile("./data/indexfile2_TestBtreePage.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/datafile1_TestBtreePage.dbf", 1024*1024)
-	datafile2 := pm.NewFile("./data/datafile2_TestBtreePage.dbf", 1024*1024)
+	indexfile1 := pm.NewFile("./data/TestBtreePage_indexfile1.dbf", 1024*1024)
+	indexfile2 := pm.NewFile("./data/TestBtreePage_indexfile2.dbf", 1024*1024)
+	datafile1 := pm.NewFile("./data/TestBtreePage_datafile1.dbf", 1024*1024)
+	datafile2 := pm.NewFile("./data/TestBtreePage_datafile2.dbf", 1024*1024)
 
 	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
@@ -56,18 +57,19 @@ func TestBtreePage(t *testing.T) {
 		keylen   uint8
 		valuelen uint8
 	}{
-		/*
-			{order: ascendOrder, elements: 50, keylen: 200, valuelen: 200},
-			{order: descendOrder, elements: 50, keylen: 200, valuelen: 200},
-			{order: randomOrder, elements: 50, keylen: 200, valuelen: 200},
-		*/
+		{order: ascendOrder, elements: 50, keylen: 200, valuelen: 200},
+		{order: descendOrder, elements: 50, keylen: 200, valuelen: 200},
+		{order: randomOrder, elements: 50, keylen: 200, valuelen: 200},
 		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
+		{order: ascendOrder, elements: 10000, keylen: 16, valuelen: 16},
+		{order: descendOrder, elements: 10000, keylen: 16, valuelen: 16},
+		{order: randomOrder, elements: 10000, keylen: 16, valuelen: 16},
 	}
 	//fmt.Printf("ts_idx=%v\n", ts_idx)
 	//fmt.Printf("ts_dat=%v\n", ts_dat)
-	fmt.Printf("datafile1=%v\n", datafile1)
+	//fmt.Printf("datafile1=%v\n", datafile1)
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
@@ -153,15 +155,12 @@ func TestBtreePage(t *testing.T) {
 			}
 			if bytes.Compare(*selected_data, values[i]) != 0 {
 				t.Errorf("Testcase[%v]: btree.Find(%s) result %s != %s", testNumber, key, *selected_data, values[i])
-				//continue
+				continue
 			}
-			//fmt.Printf("Find(%s):%v %v\n", key, b, r)
-			fmt.Printf("Find(%s):%s\trid=%v\n", key, *selected_data, *rid)
+			//fmt.Printf("Find(%s):%s\trid=%v\n", key, *selected_data, *rid)
 		}
 
 		for _, original := range btree.walk() {
-			//data := btree.ToPageDataHeader(btree.root)
-			//fmt.Printf("HEADER: %v\n", data)
 			data, err := btree.ToPageData(original)
 			if err != nil {
 				t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
