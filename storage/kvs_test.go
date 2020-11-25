@@ -8,7 +8,7 @@ import (
 func TestKvs(t *testing.T) {
 	db, err := OpenFile("testdata")
 	if err != nil {
-		//t.Errorf("Open failed: %v", err)
+		t.Errorf("Open failed: %v", err)
 	}
 	defer db.Close()
 
@@ -25,7 +25,7 @@ func TestKvs(t *testing.T) {
 		t.Errorf("Get failed: %v", err)
 	}
 	if bytes.Compare(ret, val) != 0 {
-		//t.Errorf("want: %s get : %s", val, ret)
+		t.Errorf("want: %s get : %s", val, ret)
 	}
 
 }

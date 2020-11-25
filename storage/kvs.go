@@ -1,6 +1,8 @@
 package storage
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type DB struct {
 	btree *Btree
@@ -9,8 +11,8 @@ type DB struct {
 
 func OpenFile(filepath string) (*DB, error) {
 	pm := startPageManager()
-	indexfile1 := pm.NewFile("./data/TestBtreePage_indexfile1.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/TestBtreePage_datafile1.dbf", 1024*1024)
+	indexfile1 := pm.NewFile("./data/KVS_indexfile1.dbf", 1024*1024)
+	datafile1 := pm.NewFile("./data/KVS_datafile1.dbf", 1024*1024)
 
 	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
@@ -44,13 +46,45 @@ func OpenFile(filepath string) (*DB, error) {
 }
 
 func (db *DB) Close() error {
+	// TODO:
 	return nil
 }
 
 func (db *DB) Put(key, value []byte) error {
+	rid, err := db.sp.Insert([]byte(value))
+	if err != nil {
+		return fmt.Errorf("SlottedPage.Insert(%s) error:%v", value, err)
+		/* TODO: ??
+		//fmt.Printf("%v", sp)
+		db.sp, err = newSlottedPage(ts_dat)
+		if err != nil {
+			return fmt.Errorf("Testcase[%v]: newSlottedPage() error:%v", err)
+		}
+		rid, err = sp.Insert([]byte(value))
+		if err != nil {
+			return fmt.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", value, err)
+		}
+		*/
+	}
+
+	err = db.btree.Insert(key, *rid)
+	//fmt.Printf("Insert keys[%v]=%s values[%v]=%s rids[i]=%v\n", i, keys[i], i, values[i], rids[i])
+
+	if err != nil {
+		return fmt.Errorf("Btree.Insert error:%v at %s ", err, key)
+	}
 	return nil
 }
 
 func (db *DB) Get(key []byte) ([]byte, error) {
-	return nil, nil
+	b, rid := db.btree.Find(key)
+	if !b {
+		// TODO: new error?
+		return nil, fmt.Errorf("No key: %s in B-tree.", key)
+	}
+	selected_data, err := db.sp.Select(rid)
+	if err != nil {
+		return nil, fmt.Errorf(" SlottedPage.Select(%s) error:%v", key, err)
+	}
+	return *selected_data, nil
 }
