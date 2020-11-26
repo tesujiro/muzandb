@@ -30,6 +30,7 @@ func (sp *SlottedPage) String() string {
 
 //func newSlottedPage(file *File, pagenum uint32) *SlottedPage {
 func newSlottedPage(ts *Tablespace) (*SlottedPage, error) {
+	fmt.Printf("ts=%v\n", ts)
 	page, err := ts.NewPage()
 	if err != nil {
 		return nil, err

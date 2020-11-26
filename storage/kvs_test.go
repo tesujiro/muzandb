@@ -6,7 +6,7 @@ import (
 )
 
 func TestKvs(t *testing.T) {
-	db, err := OpenFile("./testdata")
+	db, err := OpenFile("./data")
 	if err != nil {
 		t.Errorf("Open failed: %v", err)
 	}

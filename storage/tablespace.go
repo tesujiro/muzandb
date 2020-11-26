@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"os"
 )
 
 type Tablespace struct {
@@ -34,8 +35,13 @@ func (pm *PageManager) NewTablespace(name string) (*Tablespace, error) {
 }
 
 func (ts *Tablespace) addFile(file *File) error {
-	err := file.create()
-	if err != nil {
+	err := file.open()
+	if os.IsNotExist(err) {
+		err := file.create()
+		if err != nil {
+			return err
+		}
+	} else {
 		return err
 	}
 	ts.File = append(ts.File, file)
@@ -52,6 +58,9 @@ func (ts *Tablespace) NewPage() (*Page, error) {
 	// TODO: least used / all
 	pagenum := uint32(1 << 31)
 	var target *File
+	if len(ts.File) == 0 {
+		return nil, fmt.Errorf("No file in tablespace: %v\n", ts)
+	}
 	for _, file := range ts.File {
 		if file.CurPage < pagenum && file.CurPage+1 < file.Pages {
 			target = file

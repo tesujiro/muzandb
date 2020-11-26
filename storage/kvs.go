@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"os"
 )
 
 type DB struct {
@@ -10,6 +11,7 @@ type DB struct {
 }
 
 func OpenFile(filepath string) (*DB, error) {
+	//fmt.Println("OpenFile(" + filepath + ")")
 	pm := startPageManager()
 	//TODO: path
 	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*1024)
@@ -26,8 +28,8 @@ func OpenFile(filepath string) (*DB, error) {
 	}
 
 	err = ts_idx.addFile(indexfile1)
-	if err != nil {
-		return nil, fmt.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Tablespace.addFile(%v) error:%T %v", indexfile1, err, err)
 	}
 	err = ts_dat.addFile(datafile1)
 	if err != nil {
