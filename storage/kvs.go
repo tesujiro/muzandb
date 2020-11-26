@@ -11,8 +11,9 @@ type DB struct {
 
 func OpenFile(filepath string) (*DB, error) {
 	pm := startPageManager()
-	indexfile1 := pm.NewFile("./data/KVS_indexfile1.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/KVS_datafile1.dbf", 1024*1024)
+	//TODO: path
+	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*1024)
+	datafile1 := pm.NewFile(filepath+"/KVS_datafile1.dbf", 1024*1024)
 
 	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
