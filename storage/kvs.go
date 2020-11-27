@@ -14,8 +14,8 @@ func OpenFile(filepath string) (*DB, error) {
 	//fmt.Println("OpenFile(" + filepath + ")")
 	pm := startPageManager()
 	//TODO: path
-	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*1024)
-	datafile1 := pm.NewFile(filepath+"/KVS_datafile1.dbf", 1024*1024)
+	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*4096)
+	datafile1 := pm.NewFile(filepath+"/KVS_datafile1.dbf", 1024*4096)
 
 	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {

@@ -41,7 +41,7 @@ func (ts *Tablespace) addFile(file *File) error {
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if err != nil {
 		return err
 	}
 	ts.File = append(ts.File, file)

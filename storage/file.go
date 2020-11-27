@@ -106,6 +106,7 @@ func (file *File) readPage(pagenum uint32) (*Page, error) {
 }
 
 func (file *File) newPage() (*Page, error) {
+	//fmt.Printf("newPage() file:%v\n", file)
 	pagenum := file.CurPage
 	file.CurPage++
 	data, err := file.read(pagenum, 0, PageSize)
