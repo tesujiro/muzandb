@@ -94,6 +94,10 @@ func (file *File) read(page, byt uint32, size int) ([]byte, error) {
 	file.fp.Seek(int64(PageSize*page+byt), os.SEEK_SET)
 	buf := make([]byte, size)
 	_, err := file.fp.Read(buf)
+	if err != nil {
+		fmt.Printf("Error in file.read: %T %v page: %v byt: %v size: %v buf:%v\n", err, err, page, byt, size, buf)
+	}
+	//fmt.Printf("Normal in file.read: page: %v byt: %v size: %v \n", page, byt, size)
 	return buf, err
 }
 
@@ -106,7 +110,7 @@ func (file *File) readPage(pagenum uint32) (*Page, error) {
 }
 
 func (file *File) newPage() (*Page, error) {
-	//fmt.Printf("newPage() file:%v\n", file)
+	fmt.Printf("newPage() file:%v\n", file)
 	pagenum := file.CurPage
 	file.CurPage++
 	data, err := file.read(pagenum, 0, PageSize)

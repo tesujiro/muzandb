@@ -14,8 +14,8 @@ func OpenFile(filepath string) (*DB, error) {
 	//fmt.Println("OpenFile(" + filepath + ")")
 	pm := startPageManager()
 	//TODO: path
-	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*4096)
-	datafile1 := pm.NewFile(filepath+"/KVS_datafile1.dbf", 1024*4096)
+	indexfile1 := pm.NewFile(filepath+"/KVS_indexfile1.dbf", 1024*4096*20)
+	datafile1 := pm.NewFile(filepath+"/KVS_datafile1.dbf", 1024*4096*20)
 
 	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
 	if err != nil {
@@ -74,7 +74,7 @@ func (db *DB) Put(key, value []byte) error {
 	//fmt.Printf("Insert keys[%v]=%s values[%v]=%s rids[i]=%v\n", i, keys[i], i, values[i], rids[i])
 
 	if err != nil {
-		return fmt.Errorf("Btree.Insert error:%v at %s ", err, key)
+		return fmt.Errorf("Btree.Insert error:%T %v at %s ", err, err, key)
 	}
 	return nil
 }

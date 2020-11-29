@@ -43,7 +43,7 @@ func GetFile(fid FID) (*File, error) {
 func startPageManager() *PageManager {
 	fp, err := os.Open(pageMangerMetaPath)
 	if err != nil {
-		fmt.Println("Create New PageManager")
+		//fmt.Println("Create New PageManager")
 		return &PageManager{
 			//FileMap: make(map[FID]*File),
 		}
