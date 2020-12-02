@@ -67,5 +67,8 @@ func (ts *Tablespace) NewPage() (*Page, error) {
 			pagenum = file.CurPage
 		}
 	}
+	if target == nil {
+		return nil, fmt.Errorf("No space in tablespace: %v", ts)
+	}
 	return target.newPage()
 }
