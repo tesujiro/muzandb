@@ -20,5 +20,6 @@ func saveTxid() {
 func loadTxid() {
 }
 
-//func CompareTxid(a, b txid) int {
-//}
+func CompareTxid(a, b Txid) int {
+	return int(a - b)
+}
