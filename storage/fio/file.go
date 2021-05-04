@@ -29,7 +29,7 @@ func (file *File) Create() error {
 	return nil
 }
 
-func (file *File) open() error {
+func (file *File) Open() error {
 	_, err := os.Stat(file.Path)
 	if err != nil {
 		return err
@@ -62,6 +62,6 @@ func (file *File) Read(offset int64, size int) ([]byte, error) {
 	return buf, err
 }
 
-func (file *File) close() error {
+func (file *File) Close() error {
 	return file.fp.Close()
 }
