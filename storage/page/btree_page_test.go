@@ -1,4 +1,4 @@
-package storage
+package page
 
 import (
 	"bytes"
@@ -73,18 +73,19 @@ func TestBtreePage(t *testing.T) {
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		btree, err := NewBtree(ts_idx, test.keylen, test.valuelen)
+		//btree, err := NewBtree(ts_idx, test.keylen, test.valuelen)
+		btree, err := NewBtree(ts_idx.NewPage, pm.GetFile, test.keylen, test.valuelen)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}
-		sp, err := newSlottedPage(ts_dat)
+		sp, err := NewSlottedPage(ts_dat)
 		if err != nil {
-			t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
+			t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 		}
 
 		keys := make([][]byte, test.elements)
 		values := make([][]byte, test.elements)
-		rids := make([]rid, test.elements)
+		rids := make([]Rid, test.elements)
 		for i := range keys {
 			key := make([]byte, test.keylen)
 			switch test.order {
@@ -106,9 +107,9 @@ func TestBtreePage(t *testing.T) {
 			if err != nil {
 				t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, value, err)
 				//fmt.Printf("%v", sp)
-				sp, err = newSlottedPage(ts_dat)
+				sp, err = NewSlottedPage(ts_dat)
 				if err != nil {
-					t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
+					t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 				}
 				rid, err = sp.Insert([]byte(value))
 				if err != nil {

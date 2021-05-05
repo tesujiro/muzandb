@@ -5,33 +5,36 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	. "github.com/tesujiro/muzandb/errors"
+	"github.com/tesujiro/muzandb/storage/page"
 )
 
 //const PageSize = 512
-const PageSize = 1024
+//const PageSize = 1024
 const dataPath = "./data"
 const pageMangerMetaPath = dataPath + "/page_manager.gob"
 
-type FID uint8
+//type FID uint8
 
-var FileMap map[FID]*File = make(map[FID]*File)
+var FileMap map[page.FID]*page.PageFile = make(map[page.FID]*page.PageFile)
 
 type PageManager struct {
 	Tablespaces []*Tablespace
-	LastFID     FID
-	//FileMap     map[FID]*File
-	//Files       map[FID]*File
+	LastFID     page.FID
+	//FileMap     map[page.FID]*fio.File
+	//Files       map[page.FID]*fio.File
 }
 
-func (pm *PageManager) NewFile(path string, size uint32) *File {
+func (pm *PageManager) NewFile(path string, size uint32) *page.PageFile {
 	fid := pm.LastFID
-	file := newFile(pm.LastFID, path, size)
+	file := page.NewPageFile(pm.LastFID, path, size)
 	FileMap[fid] = file
 	pm.LastFID++
 	return file
 }
 
-func GetFile(fid FID) (*File, error) {
+func (pm *PageManager) GetFile(fid page.FID) (*page.PageFile, error) {
 	file := FileMap[fid]
 	if file == nil {
 		fmt.Printf("FID(%v) not found.\n", fid)
@@ -45,7 +48,7 @@ func startPageManager() *PageManager {
 	if err != nil {
 		//fmt.Println("Create New PageManager")
 		return &PageManager{
-			//FileMap: make(map[FID]*File),
+			//FileMap: make(map[page.FID]*fio.File),
 		}
 	}
 	defer fp.Close()
@@ -57,7 +60,7 @@ func startPageManager() *PageManager {
 	}
 	for _, ts := range pm.Tablespaces {
 		for _, file := range ts.File {
-			err := file.open()
+			err := file.Open()
 			if err != nil {
 				log.Fatal("file open error:", err)
 			}
@@ -85,9 +88,9 @@ func (pm *PageManager) Save() error {
 func (pm *PageManager) Stop() error {
 	for _, ts := range pm.Tablespaces {
 		for _, file := range ts.File {
-			if file.fp != nil {
-				file.fp.Close()
-			}
+			//if file.File.fp != nil {
+			file.Close()
+			//}
 		}
 	}
 	return nil

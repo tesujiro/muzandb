@@ -1,4 +1,4 @@
-package storage
+package page
 
 import (
 	"bytes"
@@ -6,11 +6,16 @@ import (
 	"fmt"
 
 	"github.com/tesujiro/muzandb/debug"
+	. "github.com/tesujiro/muzandb/errors"
+	//. "github.com/tesujiro/muzandb/storage/fio"
+	//. "github.com/tesujiro/muzandb/storage"
 )
 
 // Btree represents "B+Tree"
 type Btree struct {
-	tablespace      *Tablespace
+	//tablespace      *Tablespace
+	newPage         NewPage
+	getFile         GetFile
 	keylen          uint8 // bits
 	valuelen        uint8
 	root            *BtreeNode
@@ -19,37 +24,41 @@ type Btree struct {
 }
 
 // NewBtree returns new "B+tree".
-func NewBtree(ts *Tablespace, keylen uint8, valuelen uint8) (*Btree, error) {
+//func NewBtree(ts *Tablespace, keylen uint8, valuelen uint8) (*Btree, error) {
+func NewBtree(newPage NewPage, getFile GetFile, keylen uint8, valuelen uint8) (*Btree, error) {
 	bt := Btree{
-		tablespace:      ts,
+		//tablespace:      ts,
+		newPage:         newPage,
+		getFile:         getFile,
 		keylen:          keylen,
 		valuelen:        valuelen,
 		root:            nil,
-		leafCapacity:    int(PageSize-pageHeaderBytes-pagePointerBytes) / int(keylen+ridBytes),
-		nonLeafCapacity: int(PageSize-pageHeaderBytes-pagePointerBytes)/int(keylen+pagePointerBytes) - 1,
+		leafCapacity:    int(PageSize-PageHeaderBytes-PagePointerBytes) / int(keylen+RidBytes),
+		nonLeafCapacity: int(PageSize-PageHeaderBytes-PagePointerBytes)/int(keylen+PagePointerBytes) - 1,
 	}
 	return &bt, nil
 }
 
 // BtreeNode represents a node for "B+tree"
 type BtreeNode struct {
-	Tablespace *Tablespace
-	Page       *Page
-	Parent     BtreeNodePtr
-	Leaf       bool
-	Capacity   int          //Max number of Keys
-	NextLeaf   BtreeNodePtr //for leaf nodes
-	Keys       [][]byte
-	Rids       []rid          // Only leaf nodes have values
-	Pointers   []BtreeNodePtr // for non leaf nodes
-	Updated    bool
+	//Tablespace *Tablespace
+	NewPage  NewPage
+	Page     *Page
+	Parent   BtreeNodePtr
+	Leaf     bool
+	Capacity int          //Max number of Keys
+	NextLeaf BtreeNodePtr //for leaf nodes
+	Keys     [][]byte
+	Rids     []Rid          // Only leaf nodes have values
+	Pointers []BtreeNodePtr // for non leaf nodes
+	Updated  bool
 	//maxPointers  int
 }
 
 func (node BtreeNode) String() string {
 	var s string
 	s = fmt.Sprintf("\n")
-	s = fmt.Sprintf("%vTablespace:\t%v\n", s, node.Tablespace)
+	//s = fmt.Sprintf("%vTablespace:\t%v\n", s, node.Tablespace)
 	s = fmt.Sprintf("%vPage:\t%v\n", s, node.Page)
 	s = fmt.Sprintf("%vParent:\t%v\n", s, node.Parent)
 	s = fmt.Sprintf("%vLeaf:\t%v\n", s, node.Leaf)
@@ -102,16 +111,18 @@ func printKeys(keys [][]byte) {
 }
 
 func (bt *Btree) newRootNode() (*BtreeNode, error) {
-	page, err := bt.tablespace.NewPage()
+	//page, err := bt.tablespace.NewPage()
+	page, err := bt.newPage()
 	if err != nil {
 		return nil, err
 	}
 	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
-		Tablespace: bt.tablespace,
-		Page:       page,
-		Leaf:       true,
-		Capacity:   bt.leafCapacity,
+		//Tablespace: bt.tablespace,
+		NewPage:  bt.newPage,
+		Page:     page,
+		Leaf:     true,
+		Capacity: bt.leafCapacity,
 	}, nil
 }
 
@@ -119,19 +130,21 @@ func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
 	newKeys := make([][]byte, len(keys))
 	copy(newKeys, keys)
 
-	page, err := node.Tablespace.NewPage()
+	//page, err := node.Tablespace.NewPage()
+	page, err := node.NewPage()
 	if err != nil {
 		return nil, err
 	}
 	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
-		Tablespace: node.Tablespace,
-		Page:       page,
-		Parent:     BtreeNodePtr{node: node, page: node.Page},
-		Leaf:       node.Leaf,
-		Capacity:   node.Capacity,
-		Keys:       newKeys,
-		Updated:    true,
+		//Tablespace: node.Tablespace,
+		NewPage:  node.NewPage,
+		Page:     page,
+		Parent:   BtreeNodePtr{node: node, page: node.Page},
+		Leaf:     node.Leaf,
+		Capacity: node.Capacity,
+		Keys:     newKeys,
+		Updated:  true,
 	}, nil
 }
 
@@ -147,7 +160,7 @@ func (node *BtreeNode) overflow() bool {
 	return len(node.Keys) > node.Capacity
 }
 
-func (bt *Btree) Insert(key []byte, rid rid) error {
+func (bt *Btree) Insert(key []byte, rid Rid) error {
 	if bt.root == nil {
 		node, err := bt.newRootNode() //??????TODO:
 		if err != nil {
@@ -176,7 +189,7 @@ func (bt *Btree) Insert(key []byte, rid rid) error {
 	return nil
 }
 
-func (node *BtreeNode) insert(key []byte, rid rid) error {
+func (node *BtreeNode) insert(key []byte, rid Rid) error {
 
 	debug.Printf("+++ insert key: %s --> node keys:", key)
 	printKeys(node.Keys)
@@ -321,9 +334,9 @@ func (node *BtreeNode) split() error {
 			node.Leaf = false
 			left.Rids = node.Rids[:center]
 			//right.Rids = node.Rids[center:]
-			right.Rids = make([]rid, len(node.Rids[center:]))
+			right.Rids = make([]Rid, len(node.Rids[center:]))
 			copy(right.Rids, node.Rids[center:])
-			node.Rids = []rid{}
+			node.Rids = []Rid{}
 			left.NextLeaf.SetNode(right)
 			left.NextLeaf.SetPage(right.Page)
 		} else {
@@ -374,7 +387,7 @@ func (node *BtreeNode) split() error {
 	right.Leaf = node.Leaf
 	if node.Leaf {
 		// Rids
-		newRids := make([]rid, len(node.Rids[center:]))
+		newRids := make([]Rid, len(node.Rids[center:]))
 		copy(newRids, node.Rids[center:])
 		right.Rids = newRids
 		node.Rids = node.Rids[:center]
@@ -421,7 +434,7 @@ func (node *BtreeNode) split() error {
 	return nil
 }
 
-func (node *BtreeNode) insertAt(key []byte, rid rid, index int) error {
+func (node *BtreeNode) insertAt(key []byte, rid Rid, index int) error {
 	debug.Printf("insertAt(key:%s,rid:%v,index:%v)\n", key, rid, index)
 	if index > len(node.Keys) {
 		return errors.New("index out of range.")
@@ -468,14 +481,14 @@ func (node *BtreeNode) insertChildNodeByKey(child *BtreeNode, key []byte) error 
 	return nil
 }
 
-func (bt *Btree) Find(key []byte) (bool, *rid) {
+func (bt *Btree) Find(key []byte) (bool, *Rid) {
 	if bt.root == nil {
 		return false, nil
 	}
 	return bt.root.find(key)
 }
 
-func (node *BtreeNode) find(key []byte) (bool, *rid) {
+func (node *BtreeNode) find(key []byte) (bool, *Rid) {
 	for i, k := range node.Keys {
 		switch result := bytes.Compare(key, k); {
 		case result == 0 && node.Leaf:

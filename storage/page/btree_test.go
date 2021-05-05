@@ -1,4 +1,4 @@
-package storage
+package page
 
 import (
 	"fmt"
@@ -79,7 +79,7 @@ func TestBtree(t *testing.T) {
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		btree, err := NewBtree(ts1, test.keylen, test.valuelen)
+		btree, err := NewBtree(ts1.NewPage, pm.GetFile, test.keylen, test.valuelen)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}

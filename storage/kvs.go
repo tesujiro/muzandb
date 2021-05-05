@@ -3,11 +3,13 @@ package storage
 import (
 	"fmt"
 	"os"
+
+	"github.com/tesujiro/muzandb/storage/page"
 )
 
 type DB struct {
-	btree *Btree
-	sp    *SlottedPage
+	btree *page.Btree
+	sp    *page.SlottedPage
 }
 
 func OpenFile(filepath string) (*DB, error) {
@@ -36,13 +38,14 @@ func OpenFile(filepath string) (*DB, error) {
 		return nil, fmt.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
 	}
 
-	btree, err := NewBtree(ts_idx, 32, 128) //TODO: keylen, valuelen
+	//btree, err := NewBtree(ts_idx, 32, 128) //TODO: keylen, valuelen
+	btree, err := page.NewBtree(ts_idx.NewPage, pm.GetFile, 32, 128)
 	if err != nil {
 		return nil, fmt.Errorf("NewBtree error:%v", err)
 	}
-	sp, err := newSlottedPage(ts_dat)
+	sp, err := page.NewSlottedPage(ts_dat.NewPage)
 	if err != nil {
-		return nil, fmt.Errorf("newSlottedPage() error:%v", err)
+		return nil, fmt.Errorf("NewSlottedPage() error:%v", err)
 	}
 
 	return &DB{btree: btree, sp: sp}, nil
@@ -59,9 +62,9 @@ func (db *DB) Put(key, value []byte) error {
 		return fmt.Errorf("SlottedPage.Insert(%s) error:%v", value, err)
 		/* TODO: ??
 		//fmt.Printf("%v", sp)
-		db.sp, err = newSlottedPage(ts_dat)
+		db.sp, err = NewSlottedPage(ts_dat)
 		if err != nil {
-			return fmt.Errorf("Testcase[%v]: newSlottedPage() error:%v", err)
+			return fmt.Errorf("Testcase[%v]: NewSlottedPage() error:%v", err)
 		}
 		rid, err = sp.Insert([]byte(value))
 		if err != nil {

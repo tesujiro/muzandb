@@ -3,11 +3,13 @@ package storage
 import (
 	"fmt"
 	"os"
+
+	"github.com/tesujiro/muzandb/storage/page"
 )
 
 type Tablespace struct {
 	Name string
-	File []*File
+	File []*page.PageFile
 }
 
 func (ts *Tablespace) String() string {
@@ -34,10 +36,10 @@ func (pm *PageManager) NewTablespace(name string) (*Tablespace, error) {
 	return &ts, nil
 }
 
-func (ts *Tablespace) addFile(file *File) error {
-	err := file.open()
+func (ts *Tablespace) addFile(file *page.PageFile) error {
+	err := file.Open()
 	if os.IsNotExist(err) {
-		err := file.create()
+		err := file.Create()
 		if err != nil {
 			return err
 		}
@@ -49,15 +51,17 @@ func (ts *Tablespace) addFile(file *File) error {
 }
 
 // TODO: Tablespace.getFile -> GetFile
+/*
 func (ts *Tablespace) getFile(fid FID) (*File, error) {
 	return GetFile(fid)
 }
+*/
 
-func (ts *Tablespace) NewPage() (*Page, error) {
+func (ts *Tablespace) NewPage() (*page.Page, error) {
 	// Roundrobin
 	// TODO: least used / all
 	pagenum := uint32(1 << 31)
-	var target *File
+	var target *page.PageFile
 	if len(ts.File) == 0 {
 		return nil, fmt.Errorf("No file in tablespace: %v\n", ts)
 	}
@@ -70,5 +74,5 @@ func (ts *Tablespace) NewPage() (*Page, error) {
 	if target == nil {
 		return nil, fmt.Errorf("No space in tablespace: %v", ts)
 	}
-	return target.newPage()
+	return target.NewPage()
 }

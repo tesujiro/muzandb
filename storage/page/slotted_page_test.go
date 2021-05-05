@@ -1,10 +1,12 @@
-package storage
+package page
 
 import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
 	"testing"
+
+	. "github.com/tesujiro/muzandb/errors"
 )
 
 func TestSlottedPage(t *testing.T) {
@@ -33,13 +35,13 @@ func TestSlottedPage(t *testing.T) {
 
 	for testNumber, test := range tc {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		sp, err := newSlottedPage(ts_dat)
+		sp, err := NewSlottedPage(ts_dat.NewPage)
 		if err != nil {
-			t.Errorf("Testcase[%v]: newSlottedPage() error:%v", testNumber, err)
+			t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 		}
 
 		// Test Insert
-		rids := make([]*rid, len(test.data))
+		rids := make([]*Rid, len(test.data))
 		for i, data := range test.data {
 			rid, err := sp.Insert([]byte(data))
 			if err != test.err {
@@ -69,7 +71,7 @@ func TestSlottedPage(t *testing.T) {
 			}
 
 			// Test ToSlottedPage
-			restored, err := pd.ToSlottedPage(original.pctfree)
+			restored, err := pd.ToSlottedPage(original.pctfree, pm.GetFile)
 			if err != nil {
 				t.Errorf("Testcase[%v]: PageData.ToSlottedPage() error:%v", testNumber, err)
 			}

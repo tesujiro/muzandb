@@ -62,7 +62,7 @@ func TestPageManager(t *testing.T) {
 		//} else {
 		//fmt.Printf("readPage()=%v\n", buf)
 	}
-	fmt.Printf("pagenum=%v\n", page.pagenum)
+	fmt.Printf("pagenum=%v\n", page.Pagenum)
 	/*
 		pagenum := page.pagenum
 		fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)

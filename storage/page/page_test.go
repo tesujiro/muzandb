@@ -1,4 +1,4 @@
-package storage
+package page
 
 /*j
 func TestPage(t *testing.T) {

@@ -1,8 +1,10 @@
-package storage
+package page
 
 import (
 	"errors"
 	"fmt"
+
+	. "github.com/tesujiro/muzandb/errors"
 )
 
 const slottedPageHeaderBytes = 10
@@ -28,10 +30,11 @@ func (sp *SlottedPage) String() string {
 	return s
 }
 
-//func newSlottedPage(file *File, pagenum uint32) *SlottedPage {
-func newSlottedPage(ts *Tablespace) (*SlottedPage, error) {
+//func NewSlottedPage(file *File, pagenum uint32) *SlottedPage {
+//func NewSlottedPage(ts *Tablespace) (*SlottedPage, error) {
+func NewSlottedPage(newPage NewPage) (*SlottedPage, error) {
 	//fmt.Printf("ts=%v\n", ts)
-	page, err := ts.NewPage()
+	page, err := newPage()
 	if err != nil {
 		return nil, err
 	}
@@ -44,20 +47,20 @@ func newSlottedPage(ts *Tablespace) (*SlottedPage, error) {
 	}, nil
 }
 
-func (sp *SlottedPage) Insert(data []byte) (*rid, error) {
+func (sp *SlottedPage) Insert(data []byte) (*Rid, error) {
 	// check size
-	freeBytes := sp.freeSpacePtr - slotBytes*sp.slots - slottedPageHeaderBytes
-	if freeBytes-len(data)-slotBytes < int(PageSize*sp.pctfree) {
+	freeBytes := sp.freeSpacePtr - SlotBytes*sp.slots - slottedPageHeaderBytes
+	if freeBytes-len(data)-SlotBytes < int(PageSize*sp.pctfree) {
 		//fmt.Printf("freeBytes:%v\n", freeBytes)
 		//fmt.Printf("len(data):%v\n", len(data))
-		//fmt.Printf("slotBytes:%v\n", slotBytes)
-		//fmt.Printf("%v < PageSize:%v * sp.pctfree:%v\n", freeBytes-len(data)-slotBytes, PageSize, sp.pctfree)
+		//fmt.Printf("slotBytes:%v\n", SlotBytes)
+		//fmt.Printf("%v < PageSize:%v * sp.pctfree:%v\n", freeBytes-len(data)-SlotBytes, PageSize, sp.pctfree)
 		return nil, NoSpaceError
 	}
 
 	// get rid
 	slotnum := uint16(sp.slots)
-	rid := newRid(sp.page.file, sp.page.pagenum, slotnum)
+	rid := newRid(sp.page.File, sp.page.Pagenum, slotnum)
 
 	// set slotted page
 	sp.slots++
@@ -67,18 +70,18 @@ func (sp *SlottedPage) Insert(data []byte) (*rid, error) {
 	return &rid, nil
 }
 
-func (sp *SlottedPage) Select(rid *rid) (*[]byte, error) {
+func (sp *SlottedPage) Select(rid *Rid) (*[]byte, error) {
 	//fmt.Printf("in Select rid=%v\n", rid)
-	if rid.file.FID != sp.page.file.FID {
-		return nil, fmt.Errorf("rid.file.FID(%v) is not sp.file.FID(%v).", rid.file.FID, sp.page.file.FID)
+	if rid.File.FID != sp.page.File.FID {
+		return nil, fmt.Errorf("rid.File.FID(%v) is not sp.File.FID(%v).", rid.File.FID, sp.page.File.FID)
 	}
-	if rid.pagenum != sp.page.pagenum {
-		return nil, fmt.Errorf("rid.pagenum(%v) is not sp.page.pagenum(%v).", rid.pagenum, sp.page.pagenum)
+	if rid.Pagenum != sp.page.Pagenum {
+		return nil, fmt.Errorf("rid.Pagenum(%v) is not sp.page.Pagenum(%v).", rid.Pagenum, sp.page.Pagenum)
 	}
-	if rid.slotnum > uint16(sp.slots) {
-		return nil, fmt.Errorf("rid.pagenum(%v) is not sp.page.pagenum(%v).", rid.pagenum, sp.page.pagenum)
+	if rid.Slotnum > uint16(sp.slots) {
+		return nil, fmt.Errorf("rid.Pagenum(%v) is not sp.page.Pagenum(%v).", rid.Pagenum, sp.page.Pagenum)
 	}
-	return &sp.data[rid.slotnum], nil
+	return &sp.data[rid.Slotnum], nil
 }
 
 func (sp *SlottedPage) ToPageData() (*PageData, error) {
@@ -90,15 +93,15 @@ func (sp *SlottedPage) ToPageData() (*PageData, error) {
 	bytes[index] = byte(SlottedPageType)
 	index += 1
 	// Header: Page Pointer
-	bytes[index] = byte(sp.page.file.FID)
+	bytes[index] = byte(sp.page.File.FID)
 	index += 1
-	endian.PutUint32(bytes[index:], sp.page.pagenum)
+	Endian.PutUint32(bytes[index:], sp.page.Pagenum)
 	index += 4
 	// Header: slots
-	endian.PutUint16(bytes[index:], uint16(sp.slots))
+	Endian.PutUint16(bytes[index:], uint16(sp.slots))
 	index += 2
 	// Header: freeSpacePtr
-	endian.PutUint16(bytes[index:], uint16(sp.freeSpacePtr))
+	Endian.PutUint16(bytes[index:], uint16(sp.freeSpacePtr))
 	index += 2
 
 	index = slottedPageHeaderBytes
@@ -107,9 +110,9 @@ func (sp *SlottedPage) ToPageData() (*PageData, error) {
 	for _, data := range sp.data {
 		dataPtr -= len(data)
 		// set slot location
-		endian.PutUint32(bytes[index:], uint32(dataPtr))
-		endian.PutUint16(bytes[index+4:], uint16(len(data)))
-		index += slotBytes
+		Endian.PutUint32(bytes[index:], uint32(dataPtr))
+		Endian.PutUint16(bytes[index+4:], uint16(len(data)))
+		index += SlotBytes
 		// set data
 		for j := 0; j < len(data); j++ {
 			bytes[dataPtr+j] = data[j]
@@ -120,7 +123,7 @@ func (sp *SlottedPage) ToPageData() (*PageData, error) {
 	return &pageData, nil
 }
 
-func (pd *PageData) ToSlottedPage(pctfree float32) (*SlottedPage, error) {
+func (pd *PageData) ToSlottedPage(pctfree float32, getFile GetFile) (*SlottedPage, error) {
 
 	sp := &SlottedPage{}
 	bytes := []byte(*pd)
@@ -138,13 +141,13 @@ func (pd *PageData) ToSlottedPage(pctfree float32) (*SlottedPage, error) {
 		}
 		page := &Page{}
 		fid := FID(data[i])
-		file, err := GetFile(fid)
+		file, err := getFile(fid)
 		if err != nil {
 			return nil, errors.New("No FID in Tablespace")
 		}
-		page.file = file
+		page.File = file
 		i += 1
-		page.pagenum = endian.Uint32(data[i:])
+		page.Pagenum = Endian.Uint32(data[i:])
 
 		return page, nil
 	}
@@ -157,10 +160,10 @@ func (pd *PageData) ToSlottedPage(pctfree float32) (*SlottedPage, error) {
 	index += 5
 	sp.page = page
 	// Header: slots
-	sp.slots = int(endian.Uint16(bytes[index:]))
+	sp.slots = int(Endian.Uint16(bytes[index:]))
 	index += 2
 	// Header: freeSpacePtr
-	sp.freeSpacePtr = int(endian.Uint16(bytes[index:]))
+	sp.freeSpacePtr = int(Endian.Uint16(bytes[index:]))
 	index += 2
 	// Header: pctfree
 	sp.pctfree = pctfree
@@ -173,9 +176,9 @@ func (pd *PageData) ToSlottedPage(pctfree float32) (*SlottedPage, error) {
 		length   uint16
 	}, sp.slots)
 	for i := 0; i < sp.slots; i++ {
-		slots[i].location = endian.Uint32(bytes[index:])
-		slots[i].length = endian.Uint16(bytes[index+4:])
-		index += slotBytes
+		slots[i].location = Endian.Uint32(bytes[index:])
+		slots[i].length = Endian.Uint16(bytes[index+4:])
+		index += SlotBytes
 	}
 
 	// read data
