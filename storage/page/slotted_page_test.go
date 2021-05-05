@@ -10,18 +10,28 @@ import (
 )
 
 func TestSlottedPage(t *testing.T) {
-	pm := startPageManager()
-	datafile1 := pm.NewFile("./data/TestSlottedPage_datafile1.dbf", 1024*1024)
-
-	ts_dat, err := pm.NewTablespace("DATA TABLESPACE 1")
-	if err != nil {
-		t.Fatalf("PageManger.newTablespace() error:%v", err)
+	//pm := startPageManager()
+	//datafile1 := pm.NewFile("./data/TestSlottedPage_datafile1.dbf", 1024*1024)
+	const dataFID1 = FID(1)
+	datafile1 := NewPageFile(dataFID1, "./data/TestSlottedPage_datafile1.dbf", 1024*1024)
+	getFile := func(fid FID) (*PageFile, error) {
+		return datafile1, nil
+	}
+	newDataPage := func() (*Page, error) {
+		return datafile1.NewPage()
 	}
 
-	err = ts_dat.addFile(datafile1)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
-	}
+	/*
+		ts_dat, err := pm.NewTablespace("DATA TABLESPACE 1")
+		if err != nil {
+			t.Fatalf("PageManger.newTablespace() error:%v", err)
+		}
+
+		err = ts_dat.addFile(datafile1)
+		if err != nil {
+			t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
+		}
+	*/
 
 	tc := []struct {
 		data []string
@@ -35,7 +45,8 @@ func TestSlottedPage(t *testing.T) {
 
 	for testNumber, test := range tc {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		sp, err := NewSlottedPage(ts_dat.NewPage)
+		//sp, err := NewSlottedPage(ts_dat.NewPage)
+		sp, err := NewSlottedPage(newDataPage)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 		}
@@ -71,7 +82,8 @@ func TestSlottedPage(t *testing.T) {
 			}
 
 			// Test ToSlottedPage
-			restored, err := pd.ToSlottedPage(original.pctfree, pm.GetFile)
+			//restored, err := pd.ToSlottedPage(original.pctfree, pm.GetFile)
+			restored, err := pd.ToSlottedPage(original.pctfree, getFile)
 			if err != nil {
 				t.Errorf("Testcase[%v]: PageData.ToSlottedPage() error:%v", testNumber, err)
 			}

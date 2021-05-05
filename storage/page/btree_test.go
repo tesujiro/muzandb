@@ -18,39 +18,63 @@ func TestBtree(t *testing.T) {
 
 	//debug.On()
 
-	pm := startPageManager()
+	//pm := startPageManager()
 
-	indexfile1 := pm.NewFile("./data/TestBtree_indexfile1.dbf", 1024*1024)
-	indexfile2 := pm.NewFile("./data/TestBtree_indexfile2.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/TestBtree_datafile1.dbf", 1024*1024)
-	datafile2 := pm.NewFile("./data/TestBtree_datafile2.dbf", 1024*1024)
+	const (
+		indexFID = FID(1)
+		dataFID  = FID(2)
+	)
 
-	ts1, err := pm.NewTablespace("INDEXSPACE1")
-	if err != nil {
-		t.Fatalf("PageManger.newTablespace() error:%v", err)
+	indexfile1 := NewPageFile(indexFID, "./data/TestBtree_indexfile1.dbf", 1024*1024)
+	datafile1 := NewPageFile(dataFID, "./data/TestBtree_datafile1.dbf", 1024*1024)
+
+	getFile := func(fid FID) (*PageFile, error) {
+		switch fid {
+		case 1:
+			return indexfile1, nil
+		default:
+			return datafile1, nil
+		}
 	}
 
-	ts2, err := pm.NewTablespace("DATASPACE1")
-	if err != nil {
-		t.Fatalf("PageManger.newTablespace() error:%v", err)
-	}
+	//indexfile1 := pm.NewFile("./data/TestBtree_indexfile1.dbf", 1024*1024)
+	//indexfile2 := pm.NewFile("./data/TestBtree_indexfile2.dbf", 1024*1024)
+	//datafile1 := pm.NewFile("./data/TestBtree_datafile1.dbf", 1024*1024)
+	//datafile2 := pm.NewFile("./data/TestBtree_datafile2.dbf", 1024*1024)
 
-	err = ts1.addFile(indexfile1)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
-	}
-	err = ts1.addFile(indexfile2)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile2, err)
-	}
-	err = ts2.addFile(datafile1)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
-	}
-	err = ts2.addFile(datafile2)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
-	}
+	/*
+		ts1, err := pm.NewTablespace("INDEXSPACE1")
+		if err != nil {
+			t.Fatalf("PageManger.newTablespace() error:%v", err)
+		}
+
+		err = ts1.addFile(indexfile1)
+		if err != nil {
+			t.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
+		}
+	*/
+	/*
+		err = ts1.addFile(indexfile2)
+		if err != nil {
+			t.Errorf("Tablespace.addFile(%v) error:%v", indexfile2, err)
+		}
+	*/
+
+	/*
+		ts2, err := pm.NewTablespace("DATASPACE1")
+		if err != nil {
+			t.Fatalf("PageManger.newTablespace() error:%v", err)
+		}
+
+		err = ts2.addFile(datafile1)
+		if err != nil {
+			t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
+		}
+		err = ts2.addFile(datafile2)
+		if err != nil {
+			t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
+		}
+	*/
 	//fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	/*
@@ -79,7 +103,8 @@ func TestBtree(t *testing.T) {
 
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
-		btree, err := NewBtree(ts1.NewPage, pm.GetFile, test.keylen, test.valuelen)
+		//btree, err := NewBtree(ts1.NewPage, pm.GetFile, test.keylen, test.valuelen)
+		btree, err := NewBtree(indexfile1.NewPage, getFile, test.keylen, test.valuelen)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}

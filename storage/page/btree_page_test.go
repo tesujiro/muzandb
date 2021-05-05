@@ -10,40 +10,56 @@ import (
 
 func TestBtreePage(t *testing.T) {
 	//debug.On()
-	pm := startPageManager()
+	//pm := startPageManager()
 
-	indexfile1 := pm.NewFile("./data/TestBtreePage_indexfile1.dbf", 1024*1024)
-	indexfile2 := pm.NewFile("./data/TestBtreePage_indexfile2.dbf", 1024*1024)
-	datafile1 := pm.NewFile("./data/TestBtreePage_datafile1.dbf", 1024*1024)
-	datafile2 := pm.NewFile("./data/TestBtreePage_datafile2.dbf", 1024*1024)
+	const (
+		indexFID1 = FID(1)
+		indexFID2 = FID(2)
+		dataFID1  = FID(3)
+		dataFID2  = FID(4)
+	)
 
-	ts_idx, err := pm.NewTablespace("INDEXSPACE1")
-	if err != nil {
-		t.Fatalf("PageManger.newTablespace() error:%v", err)
-	}
+	indexfile1 := NewPageFile(indexFID1, "./data/TestBtreePage_indexfile1.dbf", 1024*1024)
+	indexfile2 := NewPageFile(indexFID2, "./data/TestBtreePage_indexfile2.dbf", 1024*1024)
+	datafile1 := NewPageFile(dataFID1, "./data/TestBtreePage_datafile1.dbf", 1024*1024)
+	datafile2 := NewPageFile(dataFID2, "./data/TestBtreePage_datafile2.dbf", 1024*1024)
 
-	ts_dat, err := pm.NewTablespace("DATASPACE1")
-	if err != nil {
-		t.Fatalf("PageManger.newTablespace() error:%v", err)
-	}
-
-	err = ts_idx.addFile(indexfile1)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
-	}
-	err = ts_idx.addFile(indexfile2)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", indexfile2, err)
-	}
-	err = ts_dat.addFile(datafile1)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
-	}
-	err = ts_dat.addFile(datafile2)
-	if err != nil {
-		t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
+	getFile := func(fid FID) (*PageFile, error) {
+		switch fid {
+		case 1:
+			return indexfile1, nil
+		case 2:
+			return indexfile2, nil
+		case 3:
+			return datafile1, nil
+		default:
+			return datafile2, nil
+		}
 	}
 
+	newIndexPageCount := 0
+	newIndexPage := func() (*Page, error) {
+		newIndexPageCount++
+		// Roundrobin
+		switch newIndexPageCount % 2 {
+		case 1:
+			return indexfile1.NewPage()
+		default:
+			return indexfile2.NewPage()
+		}
+	}
+
+	newDataPageCount := 0
+	newDataPage := func() (*Page, error) {
+		newDataPageCount++
+		// Roundrobin
+		switch newDataPageCount % 2 {
+		case 1:
+			return datafile1.NewPage()
+		default:
+			return datafile2.NewPage()
+		}
+	}
 	/*
 		err = pm.Save()
 		if err != nil {
@@ -74,11 +90,12 @@ func TestBtreePage(t *testing.T) {
 	for testNumber, test := range tests {
 		fmt.Printf("Testcase[%v]: %v\n", testNumber, test)
 		//btree, err := NewBtree(ts_idx, test.keylen, test.valuelen)
-		btree, err := NewBtree(ts_idx.NewPage, pm.GetFile, test.keylen, test.valuelen)
+		//btree, err := NewBtree(ts_idx.NewPage, pm.GetFile, test.keylen, test.valuelen)
+		btree, err := NewBtree(newIndexPage, getFile, test.keylen, test.valuelen)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewBtree error:%v", testNumber, err)
 		}
-		sp, err := NewSlottedPage(ts_dat)
+		sp, err := NewSlottedPage(newDataPage)
 		if err != nil {
 			t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 		}
@@ -107,7 +124,7 @@ func TestBtreePage(t *testing.T) {
 			if err != nil {
 				t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, value, err)
 				//fmt.Printf("%v", sp)
-				sp, err = NewSlottedPage(ts_dat)
+				sp, err = NewSlottedPage(newDataPage)
 				if err != nil {
 					t.Errorf("Testcase[%v]: NewSlottedPage() error:%v", testNumber, err)
 				}
