@@ -20,9 +20,21 @@ func TestBtreePage(t *testing.T) {
 	)
 
 	indexfile1 := NewPageFile(indexFID1, "./data/TestBtreePage_indexfile1.dbf", 1024*1024)
+	if err := indexfile1.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 	indexfile2 := NewPageFile(indexFID2, "./data/TestBtreePage_indexfile2.dbf", 1024*1024)
+	if err := indexfile2.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 	datafile1 := NewPageFile(dataFID1, "./data/TestBtreePage_datafile1.dbf", 1024*1024)
+	if err := datafile1.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 	datafile2 := NewPageFile(dataFID2, "./data/TestBtreePage_datafile2.dbf", 1024*1024)
+	if err := datafile2.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 
 	getFile := func(fid FID) (*PageFile, error) {
 		switch fid {
@@ -43,8 +55,10 @@ func TestBtreePage(t *testing.T) {
 		// Roundrobin
 		switch newIndexPageCount % 2 {
 		case 1:
+			//fmt.Println("newIndexPage:path1")
 			return indexfile1.NewPage()
 		default:
+			//fmt.Println("newIndexPage:path2")
 			return indexfile2.NewPage()
 		}
 	}

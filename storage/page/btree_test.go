@@ -18,15 +18,19 @@ func TestBtree(t *testing.T) {
 
 	//debug.On()
 
-	//pm := startPageManager()
-
 	const (
 		indexFID = FID(1)
 		dataFID  = FID(2)
 	)
 
 	indexfile1 := NewPageFile(indexFID, "./data/TestBtree_indexfile1.dbf", 1024*1024)
+	if err := indexfile1.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 	datafile1 := NewPageFile(dataFID, "./data/TestBtree_datafile1.dbf", 1024*1024)
+	if err := datafile1.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 
 	getFile := func(fid FID) (*PageFile, error) {
 		switch fid {
@@ -36,46 +40,6 @@ func TestBtree(t *testing.T) {
 			return datafile1, nil
 		}
 	}
-
-	//indexfile1 := pm.NewFile("./data/TestBtree_indexfile1.dbf", 1024*1024)
-	//indexfile2 := pm.NewFile("./data/TestBtree_indexfile2.dbf", 1024*1024)
-	//datafile1 := pm.NewFile("./data/TestBtree_datafile1.dbf", 1024*1024)
-	//datafile2 := pm.NewFile("./data/TestBtree_datafile2.dbf", 1024*1024)
-
-	/*
-		ts1, err := pm.NewTablespace("INDEXSPACE1")
-		if err != nil {
-			t.Fatalf("PageManger.newTablespace() error:%v", err)
-		}
-
-		err = ts1.addFile(indexfile1)
-		if err != nil {
-			t.Errorf("Tablespace.addFile(%v) error:%v", indexfile1, err)
-		}
-	*/
-	/*
-		err = ts1.addFile(indexfile2)
-		if err != nil {
-			t.Errorf("Tablespace.addFile(%v) error:%v", indexfile2, err)
-		}
-	*/
-
-	/*
-		ts2, err := pm.NewTablespace("DATASPACE1")
-		if err != nil {
-			t.Fatalf("PageManger.newTablespace() error:%v", err)
-		}
-
-		err = ts2.addFile(datafile1)
-		if err != nil {
-			t.Errorf("Tablespace.addFile(%v) error:%v", datafile1, err)
-		}
-		err = ts2.addFile(datafile2)
-		if err != nil {
-			t.Errorf("Tablespace.addFile(%v) error:%v", datafile2, err)
-		}
-	*/
-	//fmt.Printf("pm.Tablespaces: %v\n", pm.Tablespaces)
 
 	/*
 		err = pm.Save()
@@ -96,9 +60,9 @@ func TestBtree(t *testing.T) {
 		{order: ascendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: descendOrder, elements: 50, keylen: 16, valuelen: 16},
 		{order: randomOrder, elements: 50, keylen: 16, valuelen: 16},
-		{order: ascendOrder, elements: 10000, keylen: 16, valuelen: 16},
-		{order: descendOrder, elements: 10000, keylen: 16, valuelen: 16},
-		{order: randomOrder, elements: 10000, keylen: 16, valuelen: 16},
+		{order: ascendOrder, elements: 10000, keylen: 8, valuelen: 16},
+		{order: descendOrder, elements: 10000, keylen: 8, valuelen: 16},
+		{order: randomOrder, elements: 10000, keylen: 8, valuelen: 16},
 	}
 
 	for testNumber, test := range tests {
@@ -130,7 +94,8 @@ func TestBtree(t *testing.T) {
 		for i, key := range keys {
 			err = btree.Insert([]byte(key), rid)
 			if err != nil {
-				t.Errorf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
+				fmt.Printf("BtreeNode: %v\n", btree.root)
+				t.Fatalf("Testcase[%v]: Insert error:%v at %s (cycle:%v)", testNumber, err, key, i)
 			}
 		}
 		if !btree.checkLeafKeyOrder() {

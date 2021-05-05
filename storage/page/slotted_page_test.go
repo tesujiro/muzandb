@@ -14,6 +14,9 @@ func TestSlottedPage(t *testing.T) {
 	//datafile1 := pm.NewFile("./data/TestSlottedPage_datafile1.dbf", 1024*1024)
 	const dataFID1 = FID(1)
 	datafile1 := NewPageFile(dataFID1, "./data/TestSlottedPage_datafile1.dbf", 1024*1024)
+	if err := datafile1.Create(); err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
 	getFile := func(fid FID) (*PageFile, error) {
 		return datafile1, nil
 	}
