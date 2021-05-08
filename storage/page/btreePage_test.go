@@ -193,13 +193,14 @@ func TestBtreePage(t *testing.T) {
 		}
 
 		for _, original := range btree.walk() {
-			data, err := btree.ToPageData(original)
+			data, err := original.ToPageData()
 			if err != nil {
 				t.Errorf("Testcase[%v]: ToPageData err: %v", testNumber, err)
 			}
 			//fmt.Printf("PageData: %v\n", data)
 
-			restored, err := btree.ToNode(data)
+			//restored, err := btree.ToNode(data)
+			restored, err := data.ToNode(btree)
 			if err != nil {
 				t.Errorf("Testcase[%v]: ToNode err: %v", testNumber, err)
 			}

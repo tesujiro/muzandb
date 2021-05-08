@@ -6,7 +6,7 @@ import (
 	//"github.com/tesujiro/muzandb/storage/fio"
 )
 
-func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
+func (node *BtreeNode) ToPageDataHeader() *PageData {
 	header := make([]byte, PageHeaderBytes)
 	i := 0
 
@@ -70,12 +70,12 @@ func (btree *Btree) ToPageDataHeader(node *BtreeNode) *PageData {
 	return &pd
 }
 
-func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
+func (node *BtreeNode) ToPageData() (*PageData, error) {
 	index := 0
 	page := make([]byte, PageSize)
 
 	// Header
-	header := btree.ToPageDataHeader(node)
+	header := node.ToPageDataHeader()
 	//fmt.Printf("HEADER: %v\n", header)
 	if len(*header) > PageHeaderBytes {
 		return nil, fmt.Errorf("header size %v > PageHeaderBytes %v", len(*header), PageHeaderBytes)
@@ -90,7 +90,7 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 		for j, r := range key {
 			page[index+j] = r
 		}
-		index += int(btree.keylen)
+		index += int(node.Btree.keylen)
 	}
 
 	// Rid, Pointers
@@ -120,7 +120,7 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 	return &pd, nil
 }
 
-func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
+func (pd *PageData) ToNode(btree *Btree) (*BtreeNode, error) {
 
 	node := &BtreeNode{Btree: btree}
 	data := []byte(*pd)

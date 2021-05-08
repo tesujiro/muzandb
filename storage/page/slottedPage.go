@@ -10,7 +10,6 @@ import (
 const slottedPageHeaderBytes = 10
 
 type SlottedPage struct {
-	//tablespace   *Tablespace
 	page         *Page
 	slots        int
 	freeSpacePtr int
@@ -30,8 +29,6 @@ func (sp *SlottedPage) String() string {
 	return s
 }
 
-//func NewSlottedPage(file *File, pagenum uint32) *SlottedPage {
-//func NewSlottedPage(ts *Tablespace) (*SlottedPage, error) {
 func NewSlottedPage(newPage NewPage) (*SlottedPage, error) {
 	//fmt.Printf("ts=%v\n", ts)
 	page, err := newPage()
