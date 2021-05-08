@@ -122,8 +122,7 @@ func (btree *Btree) ToPageData(node *BtreeNode) (*PageData, error) {
 
 func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 
-	//node := &BtreeNode{Tablespace: btree.tablespace}
-	node := &BtreeNode{NewPage: btree.newPage}
+	node := &BtreeNode{Btree: btree}
 	data := []byte(*pd)
 	index := 0
 	//fmt.Printf("data=%v\n", data)
@@ -142,7 +141,6 @@ func (btree *Btree) ToNode(pd *PageData) (*BtreeNode, error) {
 		}
 		page := &Page{}
 		fid := FID(data[i])
-		//file, err := btree.tablespace.getFile(fid)
 		file, err := btree.getFile(fid)
 		if err != nil {
 			return nil, errors.New("No FID in Tablespace")

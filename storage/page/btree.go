@@ -13,7 +13,6 @@ import (
 
 // Btree represents "B+Tree"
 type Btree struct {
-	//tablespace      *Tablespace
 	newPage         NewPage
 	getFile         GetFile
 	keylen          uint8 // bits
@@ -24,10 +23,8 @@ type Btree struct {
 }
 
 // NewBtree returns new "B+tree".
-//func NewBtree(ts *Tablespace, keylen uint8, valuelen uint8) (*Btree, error) {
 func NewBtree(newPage NewPage, getFile GetFile, keylen uint8, valuelen uint8) (*Btree, error) {
 	bt := Btree{
-		//tablespace:      ts,
 		newPage:         newPage,
 		getFile:         getFile,
 		keylen:          keylen,
@@ -41,8 +38,7 @@ func NewBtree(newPage NewPage, getFile GetFile, keylen uint8, valuelen uint8) (*
 
 // BtreeNode represents a node for "B+tree"
 type BtreeNode struct {
-	//Tablespace *Tablespace
-	NewPage  NewPage
+	Btree    *Btree
 	Page     *Page
 	Parent   BtreeNodePtr
 	Leaf     bool
@@ -111,15 +107,12 @@ func printKeys(keys [][]byte) {
 }
 
 func (bt *Btree) newRootNode() (*BtreeNode, error) {
-	//page, err := bt.tablespace.NewPage()
 	page, err := bt.newPage()
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
-		//Tablespace: bt.tablespace,
-		NewPage:  bt.newPage,
+		Btree:    bt,
 		Page:     page,
 		Leaf:     true,
 		Capacity: bt.leafCapacity,
@@ -130,15 +123,12 @@ func (node *BtreeNode) newChildNode(keys [][]byte) (*BtreeNode, error) {
 	newKeys := make([][]byte, len(keys))
 	copy(newKeys, keys)
 
-	//page, err := node.Tablespace.NewPage()
-	page, err := node.NewPage()
+	page, err := node.Btree.newPage()
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("Tablepace.NewPage()=%v\n", page)
 	return &BtreeNode{
-		//Tablespace: node.Tablespace,
-		NewPage:  node.NewPage,
+		Btree:    node.Btree,
 		Page:     page,
 		Parent:   BtreeNodePtr{node: node, page: node.Page},
 		Leaf:     node.Leaf,
