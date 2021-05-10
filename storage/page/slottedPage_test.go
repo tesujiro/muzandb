@@ -61,7 +61,7 @@ func TestSlottedPage(t *testing.T) {
 			if err != test.err {
 				t.Errorf("Testcase[%v]: SlottedPage.Insert(%s) error:%v", testNumber, data, err)
 			}
-			//t.Logf("rid:%v", rid)
+			t.Logf("rid:%v", rid)
 			rids[i] = rid
 		}
 

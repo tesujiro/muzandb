@@ -1,6 +1,34 @@
 package page
 
 /*j
+const dataPath = "./data"
+
+func TestPage(t *testing.T) {
+	f := &fio.File{Path: dataPath + "/testOpenClose.dbf"}
+	defer f.Close()
+
+	var err error
+	err = f.Create()
+	if err != nil {
+		t.Fatalf("File.Create error = %v\n", err)
+	}
+
+	// Test Page Header
+	b := make([]byte, 4)
+	Endian.PutUint16(b[0:], uint16(10000))
+	Endian.PutUint16(b[2:], uint16(20000))
+	err = f.Write(1, PageSize-4, b)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	page, err := f.readPage(1)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("header[%v] slots=%v freeSpacePointer=%v\n", page.header, page.header.slots, page.header.freeSpacePointer)
+}
+
 func TestPage(t *testing.T) {
 	f := newFile(1, dataPath+"/yyy.dbf", PageSize*10)
 	f.create()

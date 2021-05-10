@@ -9,6 +9,8 @@ import (
 
 const slottedPageHeaderBytes = 10
 
+const SlotBytes = 6
+
 type SlottedPage struct {
 	page         *Page
 	slots        int

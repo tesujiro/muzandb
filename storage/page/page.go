@@ -3,8 +3,7 @@ package page
 import (
 	"encoding/binary"
 	"fmt"
-
-	. "github.com/tesujiro/muzandb/errors"
+	//. "github.com/tesujiro/muzandb/errors"
 )
 
 var Endian binary.ByteOrder = binary.BigEndian
@@ -53,15 +52,17 @@ const PageHeaderBytes = 20
 
 type FID uint8
 
+/*
 type record []byte
+*/
 
+/*
 type slot struct {
 	slotnum  uint16
 	location uint16
 	length   uint16
 }
-
-const SlotBytes = 6
+*/
 
 type Rid struct {
 	File    *PageFile
@@ -83,13 +84,16 @@ func newRid(file *PageFile, pagenum uint32, slotnum uint16) Rid {
 	}
 }
 
+/* NG
 func (rid Rid) Bytes() []byte {
 	var rid_b, pagenum_b, slotnum_b []byte
+
 	rid_b = []byte{byte(rid.File.FID)}
 	Endian.PutUint32(pagenum_b, rid.Pagenum)
 	Endian.PutUint16(slotnum_b, rid.Slotnum)
 	return append(append(rid_b, pagenum_b...), slotnum_b...)
 }
+*/
 
 func newPage(file *PageFile, pagenum uint32, bl []byte) *Page {
 	p := &Page{File: file, Pagenum: pagenum}
@@ -97,12 +101,11 @@ func newPage(file *PageFile, pagenum uint32, bl []byte) *Page {
 	return p
 }
 
-//TODO
 func (p *Page) write() error {
-	//return p.file.write(p.Pagenum, 0, p.data)
-	return nil
+	return p.File.Write(p.Pagenum, 0, p.data)
 }
 
+/*
 func (p *Page) setHeader(ph pageHeader) {
 	p.header.slots = ph.slots
 	p.header.freeSpacePointer = ph.freeSpacePointer
@@ -276,3 +279,4 @@ func (sl *slot) setDeleted() {
 func (sl *slot) deleted() bool {
 	return sl.location>>15 == 1
 }
+*/
