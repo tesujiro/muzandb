@@ -34,7 +34,19 @@ type Page struct {
 	header pageHeader
 }
 
+func newPage(file *PageFile, pagenum uint32, bl []byte) *Page {
+	p := &Page{File: file, Pagenum: pagenum}
+	//p.header = p.readHeader()
+	return p
+}
+
+func (p *Page) write() error {
+	return p.File.Write(p.Pagenum, 0, p.data)
+}
+
 const PagePointerBytes = 5
+
+type FID uint8
 
 type NewPage func() (*Page, error)
 type GetFile func(FID) (*PageFile, error)
@@ -50,19 +62,17 @@ type pageHeader struct {
 
 const PageHeaderBytes = 20
 
-type FID uint8
-
 type Rid struct {
 	File    *PageFile
 	Pagenum uint32
 	Slotnum uint16
 }
 
+const RidBytes = 7
+
 func (r Rid) String() string {
 	return fmt.Sprintf("File:%s Pagenum:%d Slotnum:%d", r.File.Path, r.Pagenum, r.Slotnum)
 }
-
-const RidBytes = 7
 
 func newRid(file *PageFile, pagenum uint32, slotnum uint16) Rid {
 	return Rid{
@@ -70,14 +80,4 @@ func newRid(file *PageFile, pagenum uint32, slotnum uint16) Rid {
 		Pagenum: pagenum,
 		Slotnum: slotnum,
 	}
-}
-
-func newPage(file *PageFile, pagenum uint32, bl []byte) *Page {
-	p := &Page{File: file, Pagenum: pagenum}
-	//p.header = p.readHeader()
-	return p
-}
-
-func (p *Page) write() error {
-	return p.File.Write(p.Pagenum, 0, p.data)
 }
