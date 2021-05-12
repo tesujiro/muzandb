@@ -45,10 +45,13 @@ func (file *PageFile) Create() error {
 	return nil
 }
 
-func (file *PageFile) writePage(page *Page, data []byte) error {
-	return file.File.Write(int64(PageSize*page.Pagenum), data)
+/*
+func (file *PageFile) Write(page *Page) error {
+	return file.File.Write(int64(PageSize*page.Pagenum), page.data)
 }
+*/
 
+/*
 func (file *PageFile) Write(page, byt uint32, buf []byte) error {
 	if page > file.Pages {
 		return fmt.Errorf("page %v larger than pages %v", page, file.Pages)
@@ -61,14 +64,14 @@ func (file *PageFile) Write(page, byt uint32, buf []byte) error {
 	}
 	// TODO: check len(buf)
 
-	/*
 		file.fp.Seek(int64(PageSize*page+byt), os.SEEK_SET)
 		_, err := file.fp.Write(buf)
 		return err
-	*/
 	return file.File.Write(int64(PageSize*page+byt), buf)
 }
+*/
 
+/*
 func (file *PageFile) readPage(pagenum uint32) (*Page, error) {
 	data, err := file.File.Read(int64(PageSize*pagenum), PageSize)
 	if err != nil {
@@ -76,7 +79,9 @@ func (file *PageFile) readPage(pagenum uint32) (*Page, error) {
 	}
 	return newPage(file, pagenum, data), nil
 }
+*/
 
+/*
 func (file *PageFile) Read(page, byt uint32, size int) ([]byte, error) {
 	if page > file.Pages {
 		return nil, fmt.Errorf("page %v larger than pages %v", page, file.Pages)
@@ -88,6 +93,7 @@ func (file *PageFile) Read(page, byt uint32, size int) ([]byte, error) {
 
 	return file.File.Read(int64(PageSize*page+byt), size)
 }
+*/
 
 func (file *PageFile) NewPage() (*Page, error) {
 	//fmt.Printf("newPage() file:%v\n", file)

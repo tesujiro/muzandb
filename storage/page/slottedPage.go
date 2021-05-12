@@ -46,6 +46,26 @@ func NewSlottedPage(newPage NewPage) (*SlottedPage, error) {
 	}, nil
 }
 
+type Rid struct {
+	File    *PageFile
+	Pagenum uint32
+	Slotnum uint16
+}
+
+const RidBytes = 7
+
+func (r Rid) String() string {
+	return fmt.Sprintf("File:%s Pagenum:%d Slotnum:%d", r.File.Path, r.Pagenum, r.Slotnum)
+}
+
+func newRid(file *PageFile, pagenum uint32, slotnum uint16) Rid {
+	return Rid{
+		File:    file,
+		Pagenum: pagenum,
+		Slotnum: slotnum,
+	}
+}
+
 func (sp *SlottedPage) Insert(data []byte) (*Rid, error) {
 	// check size
 	freeBytes := sp.freeSpacePtr - SlotBytes*sp.slots - slottedPageHeaderBytes
